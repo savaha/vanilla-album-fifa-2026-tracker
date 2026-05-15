@@ -1,7 +1,10 @@
-const CACHE_NAME = 'fullalbum-v1';
+// Incrementa VERSION cada vez que modifiques index.html, js/data.js o cualquier asset.
+const VERSION = 1;
+const CACHE_NAME = `fullalbum-v${VERSION}`;
 const ASSETS = [
   './',
   './index.html',
+  './js/data.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -10,10 +13,26 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // Usamos catch para evitar que falle la instalación si algún asset no está (ej. en desarrollo local)
       return cache.addAll(ASSETS).catch(err => console.warn('PWA: Error cacheando assets', err));
     })
   );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            console.log('PWA: Borrando cache antiguo:', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    })
+  );
+  return self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {

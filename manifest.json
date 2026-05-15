@@ -1,6 +1,6 @@
 {
-  "name": "FIFA World Cup 2026 Album",
-  "short_name": "FullAlbum",
+  "name": "FIFA 2026 Album Tracker",
+  "short_name": "FIFA Album Tracker",
   "description": "Gestor local de figuras para el mundial 2026",
   "start_url": ".",
   "display": "standalone",
