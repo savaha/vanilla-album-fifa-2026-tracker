@@ -175,689 +175,724 @@
             }
 
             // 3. LÓGICA PRINCIPAL
-        function init() {
-            renderAlbum();
-            updateStats();
-        }
-
-        function updateSticker(stickerId, delta) {
-            const currentQty = collection[stickerId] || 0;
-            const newQty = currentQty + delta;
-
-            if (newQty < 0) return; // No permitir negativos
-
-            collection[stickerId] = newQty;
-            saveCollection();
-
-            // Actualización del DOM (Renderizado eficiente para evitar recargar todo)
-            const cardEl = document.getElementById(`card-${stickerId}`);
-            const qtyText = document.getElementById(`qty-${stickerId}`);
-            const btnMinus = document.getElementById(`btn-minus-${stickerId}`);
-
-            if (newQty > 0) {
-                cardEl.classList.remove('card-missing');
-                cardEl.classList.add('card-owned');
-                btnMinus.classList.remove('opacity-50', 'pointer-events-none');
-
-                // Mostrar badge de cantidad si es repetida (opcional, como mejora UI)
-                qtyText.innerText = newQty > 1 ? `+${newQty - 1}` : '';
-            } else {
-                cardEl.classList.add('card-missing');
-                cardEl.classList.remove('card-owned');
-                btnMinus.classList.add('opacity-50', 'pointer-events-none');
-                qtyText.innerText = '';
+            function init() {
+                renderAlbum();
+                updateStats();
             }
 
-            applyFilter();
-            updateStats();
-        }
+            function updateSticker(stickerId, delta) {
+                const currentQty = collection[stickerId] || 0;
+                const newQty = currentQty + delta;
 
+                if (newQty < 0) return; // No permitir negativos
 
-        function updateStats() {
-            let globalTotal = 0;
-            let globalFound = 0;
-            let globalDuplicates = 0;
+                collection[stickerId] = newQty;
+                saveCollection();
 
-            albumStructure.forEach(section => {
-                let sectionTotal = section.stickers.length;
-                let sectionFound = 0;
-                let sectionDuplicates = 0; // NUEVO: Contador de repetidas para esta sección específica
+                // Actualización del DOM (Renderizado eficiente para evitar recargar todo)
+                const cardEl = document.getElementById(`card-${stickerId}`);
+                const qtyText = document.getElementById(`qty-${stickerId}`);
+                const btnMinus = document.getElementById(`btn-minus-${stickerId}`);
 
-                globalTotal += sectionTotal;
+                if (newQty > 0) {
+                    cardEl.classList.remove('card-missing');
+                    cardEl.classList.add('card-owned');
+                    btnMinus.classList.remove('opacity-50', 'pointer-events-none');
 
-                section.stickers.forEach(sticker => {
-                    const qty = collection[sticker.id] || 0;
-
-                    if (qty > 0) {
-                        globalFound++;
-                        sectionFound++;
-                    }
-
-                    if (qty > 1) {
-                        const extraCopies = qty - 1;
-                        globalDuplicates += extraCopies;
-                        sectionDuplicates += extraCopies; // Sumamos a la sección actual
-                    }
-                });
-
-                // 1. Actualizar el contador visual (ej. 5/20)
-                const sectionCounter = document.getElementById(`counter-val-${section.id}`);
-                if (sectionCounter) {
-                    sectionCounter.innerText = `${sectionFound}/${sectionTotal}`;
-
-                    if (sectionFound === sectionTotal) {
-                        sectionCounter.classList.remove('text-gray-500', 'bg-gray-900', 'border-white/5');
-                        sectionCounter.classList.add('text-emerald-400', 'bg-emerald-500/10', 'border-emerald-500/20');
-                    } else {
-                        sectionCounter.classList.add('text-gray-500', 'bg-gray-900', 'border-white/5');
-                        sectionCounter.classList.remove('text-emerald-400', 'bg-emerald-500/10', 'border-emerald-500/20');
-                    }
-                }
-
-                // 2. NUEVO: Actualizar Porcentaje de la sección
-                const sectionPercent = sectionTotal === 0 ? 0 : Math.round((sectionFound / sectionTotal) * 100);
-                const percentEl = document.getElementById(`percent-val-${section.id}`);
-                if (percentEl) {
-                    percentEl.innerText = `${sectionPercent}%`;
-                    // Cambiar a verde si está completada
-                    if (sectionPercent === 100) {
-                        percentEl.classList.remove('text-yellow-400/80');
-                        percentEl.classList.add('text-emerald-400');
-                    } else {
-                        percentEl.classList.add('text-yellow-400/80');
-                        percentEl.classList.remove('text-emerald-400');
-                    }
-                }
-
-                // 3. NUEVO: Actualizar Etiqueta de Repetidas
-                const dupEl = document.getElementById(`dup-val-${section.id}`);
-                if (dupEl) {
-                    if (sectionDuplicates > 0) {
-                        // Mostrar la etiqueta si hay 1 o más repetidas
-                        dupEl.innerText = `${sectionDuplicates} repes`;
-                        dupEl.classList.remove('hidden');
-                    } else {
-                        // Ocultar la etiqueta para mantener la interfaz limpia si no hay repetidas
-                        dupEl.classList.add('hidden');
-                    }
-                }
-            });
-
-            // Cálculos globales para la barra principal
-            const percentage = globalTotal === 0 ? 0 : Math.round((globalFound / globalTotal) * 100);
-
-            // Actualizar barra de progreso global
-            document.getElementById('found-count').innerText = globalFound;
-            document.getElementById('total-count').innerText = globalTotal;
-            document.getElementById('percentage-count').innerText = `${percentage}%`;
-            document.getElementById('progress-bar').style.width = `${percentage}%`;
-
-            // Textos de los botones con cantidades
-            const totalMissing = globalTotal - globalFound;
-
-            const missingValEl = document.getElementById('btn-missing-val');
-            if (missingValEl) missingValEl.innerText = `(${totalMissing})`;
-
-            const ownedValEl = document.getElementById('btn-owned-val');
-            if (ownedValEl) ownedValEl.innerText = `(${globalFound})`;
-
-            const duplicatesValEl = document.getElementById('btn-duplicates-val');
-            if (duplicatesValEl) duplicatesValEl.innerText = `(${globalDuplicates})`;
-
-
-            // --- Lógica del Dashboard Superior (actualización dirigida) ---
-            const dashboardContainer = document.getElementById('dashboard-stats');
-            if (!dashboardContainer) return;
-
-            // Inicializar estructura estática del dashboard una sola vez
-            if (!dashboardContainer.dataset.initialized) {
-                dashboardContainer.innerHTML = `
-                    <div class="bg-gray-900/40 border border-white/5 rounded-xl p-4">
-                        <h3 class="text-[10px] font-bold uppercase tracking-widest text-pink-500 mb-3 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span>
-                            Prioridad: Más faltantes
-                        </h3>
-                        <div id="top-missing-list" class="flex flex-col gap-2"></div>
-                    </div>
-                    <div class="bg-gray-900/40 border border-white/5 rounded-xl p-4">
-                        <h3 id="completed-header" class="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-3 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <span id="completed-text"></span>
-                        </h3>
-                        <div id="completed-list" class="flex flex-wrap gap-1.5"></div>
-                    </div>
-                `;
-                dashboardContainer.dataset.initialized = '1';
-            }
-
-            // 1. Obtener datos de todas las secciones
-            const sectionData = albumStructure.map(section => {
-                const total = section.stickers.length;
-                const found = section.stickers.filter(s => (collection[s.id] || 0) > 0).length;
-                return { name: section.name, id: section.id, missing: total - found, total: total };
-            });
-
-            // 2. Actualizar Top 3 Faltantes
-            const topMissing = [...sectionData]
-                .filter(s => s.missing > 0)
-                .sort((a, b) => b.missing - a.missing)
-                .slice(0, 3);
-
-            const topMissingList = document.getElementById('top-missing-list');
-            if (topMissing.length > 0) {
-                topMissingList.innerHTML = topMissing.map(s => `
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-300 truncate"><span class="font-bold text-white">${s.id}</span> · ${s.name}</span>
-                        <span class="text-pink-400 font-mono font-bold">-${s.missing}</span>
-                    </div>
-                `).join('');
-            } else {
-                topMissingList.innerHTML = '<p class="text-xs text-gray-500 italic">¡No hay más faltantes!</p>';
-            }
-
-            // 3. Actualizar Completadas
-            const completed = sectionData.filter(s => s.missing === 0);
-            document.getElementById('completed-text').textContent = `Secciones completadas (${completed.length})`;
-
-            const completedList = document.getElementById('completed-list');
-            if (completed.length > 0) {
-                completedList.innerHTML = completed.map(s => `
-                    <span class="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                        ${s.id}
-                    </span>
-                `).join('');
-            } else {
-                completedList.innerHTML = '<p class="text-xs text-gray-500 italic">Aún ninguna sección completa.</p>';
-            }
-        }
-
-        function setFilter(filterType) {
-            // Si el filtro ya es el actual, lo quitamos (volvemos a 'all')
-            if (currentFilter === filterType) {
-                currentFilter = 'all';
-            } else {
-                currentFilter = filterType;
-            }
-
-            // Actualizar estilos de los botones
-            const filters = ['missing', 'owned', 'duplicates'];
-            filters.forEach(f => {
-                const btn = document.getElementById(`btn-filter-${f}`);
-                if (f === currentFilter) {
-                    btn.classList.add('bg-yellow-400', 'text-gray-950', 'border-yellow-400');
-                    btn.classList.remove('bg-gray-900', 'text-gray-400', 'border-white/10');
+                    // Mostrar badge de cantidad si es repetida (opcional, como mejora UI)
+                    qtyText.innerText = newQty > 1 ? `+${newQty - 1}` : '';
                 } else {
-                    btn.classList.add('bg-gray-900', 'text-gray-400', 'border-white/10');
-                    btn.classList.remove('bg-yellow-400', 'text-gray-950', 'border-yellow-400');
+                    cardEl.classList.add('card-missing');
+                    cardEl.classList.remove('card-owned');
+                    btnMinus.classList.add('opacity-50', 'pointer-events-none');
+                    qtyText.innerText = '';
                 }
-            });
 
-            applyFilter();
-        }
-
-        function applyFilter() {
-            albumStructure.forEach(section => {
-                let visibleCount = 0;
-
-                section.stickers.forEach(sticker => {
-                    const cardEl = document.getElementById(`card-${sticker.id}`);
-                    const qty = collection[sticker.id] || 0;
-
-                    let isVisible = false;
-                    if (currentFilter === 'all') isVisible = true;
-                    if (currentFilter === 'missing' && qty === 0) isVisible = true;
-                    if (currentFilter === 'owned' && qty > 0) isVisible = true;
-                    if (currentFilter === 'duplicates' && qty > 1) isVisible = true;
-
-                    if (isVisible) {
-                        cardEl.classList.remove('hidden-card');
-                        visibleCount++;
-                    } else {
-                        cardEl.classList.add('hidden-card');
-                    }
-                });
-
-                // Ocultar la sección entera si no hay figuras visibles con el filtro actual
-                const sectionEl = document.getElementById(`section-${section.id}`);
-                if (visibleCount === 0) {
-                    sectionEl.style.display = 'none';
-                } else {
-                    sectionEl.style.display = 'block';
-                }
-            });
-        }
-
-        function toggleAllSections() {
-            // Invertimos el estado actual
-            allExpanded = !allExpanded;
-            isBulkToggle = true; // Bloqueamos el scroll individual
-
-            // Seleccionamos todos los elementos <details> dentro del álbum
-            const sections = document.querySelectorAll('#album-container details');
-
-            // Le aplicamos el nuevo estado a cada uno
-            sections.forEach(section => {
-                section.open = allExpanded;
-            });
-
-            // Actualizamos el texto del botón (dentro del span para no borrar el icono)
-            const btnToggleSpan = document.querySelector('#btn-toggle-sections span');
-            if (allExpanded) {
-                btnToggleSpan.innerText = 'Colapsar Todos';
-            } else {
-                btnToggleSpan.innerText = 'Expandir Todos';
+                applyFilter();
+                updateStats();
             }
 
-            // Liberamos el bloqueo después de que los eventos de toggle se procesen
-            setTimeout(() => { isBulkToggle = false; }, 200);
-        }
 
-        // 4. GENERACIÓN DE LA INTERFAZ
-        function renderAlbum() {
-            const container = document.getElementById('album-container');
-            container.innerHTML = '';
+            function updateStats() {
+                let globalTotal = 0;
+                let globalFound = 0;
+                let globalDuplicates = 0;
+                const sectionData = [];
 
-            // 1. Creamos la copia y ordenamos según la preferencia actual
-            let displayStructure = [...albumStructure];
-            // Aplicamos el ordenamiento correspondiente
-            if (currentSortOrder === 'alpha') {
-                displayStructure.sort((a, b) => a.name.localeCompare(b.name));
+                albumStructure.forEach(section => {
+                    let sectionTotal = section.stickers.length;
+                    let sectionFound = 0;
+                    let sectionDuplicates = 0; // NUEVO: Contador de repetidas para esta sección específica
 
-            } else if (currentSortOrder === 'percent-desc') {
-                // Ordena de Mayor a Menor (Si hay empate en %, ordena por nombre)
-                displayStructure.sort((a, b) => {
-                    const diff = getSectionPercentage(b) - getSectionPercentage(a);
-                    return diff !== 0 ? diff : a.name.localeCompare(b.name);
-                });
+                    globalTotal += sectionTotal;
 
-            } else if (currentSortOrder === 'percent-asc') {
-                // Ordena de Menor a Mayor (Si hay empate en %, ordena por nombre)
-                displayStructure.sort((a, b) => {
-                    const diff = getSectionPercentage(a) - getSectionPercentage(b);
-                    return diff !== 0 ? diff : a.name.localeCompare(b.name);
-                });
-            }
+                    section.stickers.forEach(sticker => {
+                        const qty = collection[sticker.id] || 0;
 
-            let teamCounter = 0;
-            const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+                        if (qty > 0) {
+                            globalFound++;
+                            sectionFound++;
+                        }
 
-            // 2. Iteramos sobre la estructura (ordenada o por defecto)
-            displayStructure.forEach((section, index) => {
-                // Insertar Cabecera de Grupo si es el orden por defecto y no es FWC
-                if (currentSortOrder === 'default' && section.id !== 'FWC') {
-                    if (teamCounter % 4 === 0) {
-                        const groupIdx = Math.floor(teamCounter / 4);
-                        if (groupIdx < groupLetters.length) {
-                            const groupHeader = document.createElement('div');
-                            // Usamos sticky para que el grupo se mantenga visible mientras haces scroll por sus 4 equipos
-                            groupHeader.className = 'mt-10 mb-4 sticky top-0 z-20 bg-[#030712] py-3 border-b border-white/5 flex items-center gap-4';
-                            groupHeader.innerHTML = `
-                                <div class="h-8 w-8 rounded-lg bg-yellow-400 flex items-center justify-center text-gray-950 font-black text-sm">
-                                    ${groupLetters[groupIdx]}
-                                </div>
-                                <span class="text-sm font-black uppercase text-white tracking-tight">Grupo ${groupLetters[groupIdx]}</span>
-                                <div class="flex-1 h-[1px] bg-white/5"></div>
-                            `;
-                            container.appendChild(groupHeader);
+                        if (qty > 1) {
+                            const extraCopies = qty - 1;
+                            globalDuplicates += extraCopies;
+                            sectionDuplicates += extraCopies; // Sumamos a la sección actual
+                        }
+                    });
+
+                    // 1. Actualizar el contador visual (ej. 5/20)
+                    const sectionCounter = document.getElementById(`counter-val-${section.id}`);
+                    if (sectionCounter) {
+                        sectionCounter.innerText = `${sectionFound}/${sectionTotal}`;
+
+                        if (sectionFound === sectionTotal) {
+                            sectionCounter.classList.remove('text-gray-500', 'bg-gray-900', 'border-white/5');
+                            sectionCounter.classList.add('text-emerald-400', 'bg-emerald-500/10', 'border-emerald-500/20');
+                        } else {
+                            sectionCounter.classList.add('text-gray-500', 'bg-gray-900', 'border-white/5');
+                            sectionCounter.classList.remove('text-emerald-400', 'bg-emerald-500/10', 'border-emerald-500/20');
                         }
                     }
-                    teamCounter++;
+
+                    // 2. NUEVO: Actualizar Porcentaje de la sección
+                    const sectionPercent = sectionTotal === 0 ? 0 : Math.round((sectionFound / sectionTotal) * 100);
+                    const percentEl = document.getElementById(`percent-val-${section.id}`);
+                    if (percentEl) {
+                        percentEl.innerText = `${sectionPercent}%`;
+                        // Cambiar a verde si está completada
+                        if (sectionPercent === 100) {
+                            percentEl.classList.remove('text-yellow-400/80');
+                            percentEl.classList.add('text-emerald-400');
+                        } else {
+                            percentEl.classList.add('text-yellow-400/80');
+                            percentEl.classList.remove('text-emerald-400');
+                        }
+                    }
+
+                    // 3. Acumular datos para el dashboard
+                    sectionData.push({
+                        name: section.name,
+                        id: section.id,
+                        missing: sectionTotal - sectionFound,
+                        total: sectionTotal
+                    });
+
+                    // 4. Actualizar Etiqueta de Repetidas
+                    const dupEl = document.getElementById(`dup-val-${section.id}`);
+                    if (dupEl) {
+                        if (sectionDuplicates > 0) {
+                            dupEl.innerText = `${sectionDuplicates} repes`;
+                            dupEl.classList.remove('hidden');
+                        } else {
+                            dupEl.classList.add('hidden');
+                        }
+                    }
+                });
+
+                // Cálculos globales para la barra principal
+                const percentage = globalTotal === 0 ? 0 : Math.round((globalFound / globalTotal) * 100);
+
+                // Actualizar barra de progreso global
+                document.getElementById('found-count').innerText = globalFound;
+                document.getElementById('total-count').innerText = globalTotal;
+                document.getElementById('percentage-count').innerText = `${percentage}%`;
+                document.getElementById('progress-bar').style.width = `${percentage}%`;
+
+                // Textos de los botones con cantidades
+                const totalMissing = globalTotal - globalFound;
+
+                const missingValEl = document.getElementById('btn-missing-val');
+                if (missingValEl) missingValEl.innerText = `(${totalMissing})`;
+
+                const ownedValEl = document.getElementById('btn-owned-val');
+                if (ownedValEl) ownedValEl.innerText = `(${globalFound})`;
+
+                const duplicatesValEl = document.getElementById('btn-duplicates-val');
+                if (duplicatesValEl) duplicatesValEl.innerText = `(${globalDuplicates})`;
+
+
+                // --- Lógica del Dashboard Superior (actualización dirigida) ---
+                const dashboardContainer = document.getElementById('dashboard-stats');
+                if (!dashboardContainer) return;
+
+                // Inicializar estructura estática del dashboard una sola vez
+                if (!dashboardContainer.dataset.initialized) {
+                    dashboardContainer.innerHTML = `
+                        <div class="bg-gray-900/40 border border-white/5 rounded-xl p-4">
+                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-pink-500 mb-3 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span>
+                                Prioridad: Más faltantes
+                            </h3>
+                            <div id="top-missing-list" class="flex flex-col gap-2"></div>
+                        </div>
+                        <div class="bg-gray-900/40 border border-white/5 rounded-xl p-4">
+                            <h3 id="completed-header" class="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-3 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span id="completed-text"></span>
+                            </h3>
+                            <div id="completed-list" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                    `;
+                    dashboardContainer.dataset.initialized = '1';
                 }
 
-                const details = document.createElement('details');
-                details.id = `section-${section.id}`;
-                details.className = 'group';
+                // 1. Actualizar Top 3 Faltantes (usa sectionData del loop principal)
+                const topMissing = [...sectionData]
+                    .filter(s => s.missing > 0)
+                    .sort((a, b) => b.missing - a.missing)
+                    .slice(0, 3);
 
-                // CORRECCIÓN: Ahora el estado de apertura depende de la variable global
-                details.open = allExpanded;
+                const topMissingList = document.getElementById('top-missing-list');
+                if (topMissing.length > 0) {
+                    topMissingList.innerHTML = topMissing.map(s => `
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-300 truncate"><span class="font-bold text-white">${s.id}</span> · ${s.name}</span>
+                            <span class="text-pink-400 font-mono font-bold">-${s.missing}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    topMissingList.innerHTML = '<p class="text-xs text-gray-500 italic">¡No hay más faltantes!</p>';
+                }
 
-                // Auto-scroll al abrir una sección (solo si es activado por el usuario, no en el primer render)
-                let isInitialRender = true;
-                details.addEventListener('toggle', (e) => {
-                    if (details.open && !isInitialRender && !isBulkToggle) {
-                        setTimeout(() => {
-                            const offset = 80;
-                            const elementPosition = details.getBoundingClientRect().top;
-                            const offsetPosition = elementPosition + window.pageYOffset - offset;
+                // 2. Actualizar Completadas
+                const completed = sectionData.filter(s => s.missing === 0);
+                document.getElementById('completed-text').textContent = `Secciones completadas (${completed.length})`;
 
-                            window.scrollTo({
-                                top: offsetPosition,
-                                behavior: 'smooth'
-                            });
-                        }, 50);
+                const completedList = document.getElementById('completed-list');
+                if (completed.length > 0) {
+                    completedList.innerHTML = completed.map(s => `
+                        <span class="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                            ${s.id}
+                        </span>
+                    `).join('');
+                } else {
+                    completedList.innerHTML = '<p class="text-xs text-gray-500 italic">Aún ninguna sección completa.</p>';
+                }
+            }
+
+            function setFilter(filterType) {
+                // Si el filtro ya es el actual, lo quitamos (volvemos a 'all')
+                if (currentFilter === filterType) {
+                    currentFilter = 'all';
+                } else {
+                    currentFilter = filterType;
+                }
+
+                // Actualizar estilos de los botones
+                const filters = ['missing', 'owned', 'duplicates'];
+                filters.forEach(f => {
+                    const btn = document.getElementById(`btn-filter-${f}`);
+                    if (!btn) return;
+                    if (f === currentFilter) {
+                        btn.classList.add('bg-yellow-400', 'text-gray-950', 'border-yellow-400');
+                        btn.classList.remove('bg-gray-900', 'text-gray-400', 'border-white/10');
+                    } else {
+                        btn.classList.add('bg-gray-900', 'text-gray-400', 'border-white/10');
+                        btn.classList.remove('bg-yellow-400', 'text-gray-950', 'border-yellow-400');
                     }
                 });
-                // Quitamos el flag de render inicial después del primer ciclo de ejecución
-                setTimeout(() => { isInitialRender = false; }, 100);
 
-                // Summary con porcentaje y duplicados por sección
-                const summary = document.createElement('summary');
-                summary.className = 'flex items-center justify-between gap-2 py-2 cursor-pointer list-none select-none border-b border-gray-800 pb-2 mb-3';
-                summary.innerHTML = `
-            <div class="flex items-center gap-2 overflow-hidden w-full">
-                <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
-                    <span class="text-[11px] sm:text-sm font-black text-white whitespace-nowrap">${section.id}</span>
-                    <span class="text-[11px] sm:text-sm font-medium text-gray-500 opacity-60">·</span>
-                    <span class="text-[11px] sm:text-sm font-bold uppercase tracking-tight text-gray-500 truncate opacity-80">${section.name}</span>
+                applyFilter();
+            }
+
+            function applyFilter() {
+                albumStructure.forEach(section => {
+                    let visibleCount = 0;
+
+                    section.stickers.forEach(sticker => {
+                        const cardEl = document.getElementById(`card-${sticker.id}`);
+                        const qty = collection[sticker.id] || 0;
+
+                        let isVisible = false;
+                        if (currentFilter === 'all') isVisible = true;
+                        if (currentFilter === 'missing' && qty === 0) isVisible = true;
+                        if (currentFilter === 'owned' && qty > 0) isVisible = true;
+                        if (currentFilter === 'duplicates' && qty > 1) isVisible = true;
+
+                        if (isVisible) {
+                            cardEl.classList.remove('hidden-card');
+                            visibleCount++;
+                        } else {
+                            cardEl.classList.add('hidden-card');
+                        }
+                    });
+
+                    // Ocultar la sección entera si no hay figuras visibles con el filtro actual
+                    const sectionEl = document.getElementById(`section-${section.id}`);
+                    if (visibleCount === 0) {
+                        sectionEl.style.display = 'none';
+                    } else {
+                        sectionEl.style.display = 'block';
+                    }
+                });
+            }
+
+            function toggleAllSections() {
+                // Invertimos el estado actual
+                allExpanded = !allExpanded;
+                isBulkToggle = true; // Bloqueamos el scroll individual
+
+                // Seleccionamos todos los elementos <details> dentro del álbum
+                const sections = document.querySelectorAll('#album-container details');
+
+                // Le aplicamos el nuevo estado a cada uno
+                sections.forEach(section => {
+                    section.open = allExpanded;
+                });
+
+                // Actualizamos el texto del botón (dentro del span para no borrar el icono)
+                const btnToggleSpan = document.querySelector('#btn-toggle-sections span');
+                if (allExpanded) {
+                    btnToggleSpan.innerText = 'Colapsar Todos';
+                } else {
+                    btnToggleSpan.innerText = 'Expandir Todos';
+                }
+
+                // Liberamos el bloqueo después de que los eventos de toggle se procesen
+                setTimeout(() => { isBulkToggle = false; }, 200);
+            }
+
+            // 4. GENERACIÓN DE LA INTERFAZ
+
+            function reorderAlbum() {
+                const container = document.getElementById('album-container');
+                const prevSort = container.dataset.sortOrder || '';
+
+                // Cambio estructural (implica grupos): render completo
+                if (prevSort !== currentSortOrder && (prevSort === 'default' || currentSortOrder === 'default')) {
+                    renderAlbum();
+                    return;
+                }
+
+                // Reordenamiento ligero (solo entre modos sin grupos)
+                let displayStructure = [...albumStructure];
+                if (currentSortOrder === 'alpha') {
+                    displayStructure.sort((a, b) => a.name.localeCompare(b.name));
+                } else if (currentSortOrder === 'percent-desc' || currentSortOrder === 'percent-asc') {
+                    const percentMap = new Map();
+                    displayStructure.forEach(s => percentMap.set(s.id, getSectionPercentage(s)));
+                    const multiplier = currentSortOrder === 'percent-desc' ? -1 : 1;
+                    displayStructure.sort((a, b) => {
+                        const diff = (percentMap.get(a.id) - percentMap.get(b.id)) * multiplier;
+                        return diff !== 0 ? diff : a.name.localeCompare(b.name);
+                    });
+                }
+
+                // Quitar group headers si los hay
+                container.querySelectorAll('[data-group-header]').forEach(h => h.remove());
+
+                // Reordenar <details> existentes (appendChild mueve, no clona)
+                const sortedIds = displayStructure.map(s => s.id);
+                sortedIds.forEach(id => {
+                    const el = document.getElementById(`section-${id}`);
+                    if (el) container.appendChild(el);
+                });
+
+                container.dataset.sortOrder = currentSortOrder;
+                applyFilter();
+                updateStats();
+            }
+
+            function renderAlbum() {
+                const container = document.getElementById('album-container');
+                container.dataset.sortOrder = currentSortOrder;
+                container.innerHTML = '';
+
+                // 1. Creamos la copia y ordenamos según la preferencia actual
+                let displayStructure = [...albumStructure];
+                // Aplicamos el ordenamiento correspondiente
+                if (currentSortOrder === 'alpha') {
+                    displayStructure.sort((a, b) => a.name.localeCompare(b.name));
+                } else if (currentSortOrder === 'percent-desc' || currentSortOrder === 'percent-asc') {
+                    // Precalcular porcentajes una sola vez por sección (evita recalcular en cada comparación del sort)
+                    const percentMap = new Map();
+                    displayStructure.forEach(s => percentMap.set(s.id, getSectionPercentage(s)));
+                    const multiplier = currentSortOrder === 'percent-desc' ? -1 : 1;
+                    displayStructure.sort((a, b) => {
+                        const diff = (percentMap.get(a.id) - percentMap.get(b.id)) * multiplier;
+                        return diff !== 0 ? diff : a.name.localeCompare(b.name);
+                    });
+                }
+
+                let teamCounter = 0;
+                const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+
+                // 2. Iteramos sobre la estructura (ordenada o por defecto)
+                displayStructure.forEach((section, index) => {
+                    // Insertar Cabecera de Grupo si es el orden por defecto y no es FWC
+                    if (currentSortOrder === 'default' && section.id !== 'FWC') {
+                        if (teamCounter % 4 === 0) {
+                            const groupIdx = Math.floor(teamCounter / 4);
+                            if (groupIdx < groupLetters.length) {
+                                const groupHeader = document.createElement('div');
+                                groupHeader.dataset.groupHeader = '';
+                                groupHeader.className = 'mt-10 mb-4 sticky top-0 z-20 bg-[#030712] py-3 border-b border-white/5 flex items-center gap-4';
+                                groupHeader.innerHTML = `
+                                    <div class="h-8 w-8 rounded-lg bg-yellow-400 flex items-center justify-center text-gray-950 font-black text-sm">
+                                        ${groupLetters[groupIdx]}
+                                    </div>
+                                    <span class="text-sm font-black uppercase text-white tracking-tight">Grupo ${groupLetters[groupIdx]}</span>
+                                    <div class="flex-1 h-[1px] bg-white/5"></div>
+                                `;
+                                container.appendChild(groupHeader);
+                            }
+                        }
+                        teamCounter++;
+                    }
+
+                    const details = document.createElement('details');
+                    details.id = `section-${section.id}`;
+                    details.className = 'group';
+
+                    // CORRECCIÓN: Ahora el estado de apertura depende de la variable global
+                    details.open = allExpanded;
+
+                    // Auto-scroll al abrir una sección (solo si es activado por el usuario, no en el primer render)
+                    let isInitialRender = true;
+                    details.addEventListener('toggle', (e) => {
+                        if (details.open && !isInitialRender && !isBulkToggle) {
+                            setTimeout(() => {
+                                const offset = 80;
+                                const elementPosition = details.getBoundingClientRect().top;
+                                const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                                window.scrollTo({
+                                    top: offsetPosition,
+                                    behavior: 'smooth'
+                                });
+                            }, 50);
+                        }
+                    });
+                    // Quitamos el flag de render inicial después del primer ciclo de ejecución
+                    setTimeout(() => { isInitialRender = false; }, 100);
+
+                    // Summary con porcentaje y duplicados por sección
+                    const summary = document.createElement('summary');
+                    summary.className = 'flex items-center justify-between gap-2 py-2 cursor-pointer list-none select-none border-b border-gray-800 pb-2 mb-3';
+                    summary.innerHTML = `
+                <div class="flex items-center gap-2 overflow-hidden w-full">
+                    <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
+                        <span class="text-[11px] sm:text-sm font-black text-white whitespace-nowrap">${section.id}</span><span class="text-[11px] sm:text-sm font-medium text-gray-500 opacity-60">·</span><span class="text-[11px] sm:text-sm font-bold uppercase tracking-tight text-gray-500 truncate opacity-80">${section.name}</span>
+                    </div>
+                    <span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black text-yellow-400 whitespace-nowrap">0%</span>
+                    <div class="flex items-center gap-1.5 ml-1">
+                        <span id="dup-val-${section.id}" class="hidden text-[9px] font-bold px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 border border-pink-500/30 whitespace-nowrap">0 repes</span><span id="counter-val-${section.id}" class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-900 border border-white/5 text-gray-500 transition-colors whitespace-nowrap">0/0</span>
+                    </div>
                 </div>
-                
-                <span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black text-yellow-400 whitespace-nowrap">0%</span>
-                
-                <div class="flex items-center gap-1.5 ml-1">
-                    <span id="dup-val-${section.id}" class="hidden text-[9px] font-bold px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 border border-pink-500/30 whitespace-nowrap">
-                        0 repes
-                    </span>
-                    
-                    <span id="counter-val-${section.id}" class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-900 border border-white/5 text-gray-500 transition-colors whitespace-nowrap">
-                        0/0
-                    </span>
-                </div>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0">
-                <path d="m6 9 6 6 6-6"></path>
-            </svg>
-        `;
-
-                const grid = document.createElement('div');
-                grid.className = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-10 gap-2 mb-6';
-
-                section.stickers.forEach(sticker => {
-                    const qty = collection[sticker.id] || 0;
-                    const isMissing = qty === 0;
-                    const card = document.createElement('div');
-                    card.id = `card-${sticker.id}`;
-                    card.className = `relative aspect-[3/4] flex flex-col items-center justify-center border rounded-md select-none transition-colors duration-200 ${isMissing ? 'card-missing' : 'card-owned'}`;
-
-                    const badgeText = qty > 1 ? `+${qty - 1}` : '';
-
-                    card.innerHTML = `
-                <div class="absolute top-1.5 right-1.5 text-xs font-black text-yellow-400 tracking-tighter z-10" id="qty-${sticker.id}">${badgeText}</div>
-                <div class="flex flex-col items-center justify-center mb-8 px-1">
-                    <div class="text-[11px] sm:text-sm font-black leading-none tracking-tight">${sticker.id}</div>
-                    <div class="text-[9px] sm:text-[10px] leading-[1.1] text-center mt-1 w-full opacity-100 overflow-hidden line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${sticker.desc}</div>
-                </div>
-                <div class="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 p-1.5 bg-black/50 backdrop-blur-md rounded-b-md">
-                    <button onclick="updateSticker('${sticker.id}', -1)" id="btn-minus-${sticker.id}" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors hover:bg-white/20 text-white border border-white/10 ${isMissing ? 'opacity-50 pointer-events-none' : ''}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path></svg>
-                    </button>
-                    <button onclick="updateSticker('${sticker.id}', 1)" class="w-8 h-8 flex items-center justify-center rounded-md bg-yellow-400 hover:bg-yellow-500 text-gray-950 transition-colors shadow-lg shadow-yellow-400/20">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-                    </button>
-                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0">
+                    <path d="m6 9 6 6 6-6"></path>
+                </svg>
             `;
-                    grid.appendChild(card);
+
+                    const grid = document.createElement('div');
+                    grid.className = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-10 gap-2 mb-6';
+
+                    section.stickers.forEach(sticker => {
+                        const qty = collection[sticker.id] || 0;
+                        const isMissing = qty === 0;
+                        const card = document.createElement('div');
+                        card.id = `card-${sticker.id}`;
+                        card.className = `relative aspect-[3/4] flex flex-col items-center justify-center border rounded-md select-none transition-colors duration-200 ${isMissing ? 'card-missing' : 'card-owned'}`;
+
+                        const badgeText = qty > 1 ? `+${qty - 1}` : '';
+
+                        card.innerHTML = `
+                    <div class="absolute top-1.5 right-1.5 text-xs font-black text-yellow-400 tracking-tighter z-10" id="qty-${sticker.id}">${badgeText}</div>
+                    <div class="flex flex-col items-center justify-center mb-8 px-1">
+                        <div class="text-[11px] sm:text-sm font-black leading-none tracking-tight">${sticker.id}</div>
+                        <div class="text-[9px] sm:text-[10px] leading-[1.1] text-center mt-1 w-full opacity-100 overflow-hidden line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${sticker.desc}</div>
+                    </div>
+                    <div class="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 p-1.5 bg-black/50 backdrop-blur-md rounded-b-md">
+                        <button onclick="updateSticker('${sticker.id}', -1)" id="btn-minus-${sticker.id}" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors hover:bg-white/20 text-white border border-white/10 ${isMissing ? 'opacity-50 pointer-events-none' : ''}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path></svg>
+                        </button>
+                        <button onclick="updateSticker('${sticker.id}', 1)" class="w-8 h-8 flex items-center justify-center rounded-md bg-yellow-400 hover:bg-yellow-500 text-gray-950 transition-colors shadow-lg shadow-yellow-400/20">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+                        </button>
+                    </div>
+                `;
+                        grid.appendChild(card);
+                    });
+
+                    details.appendChild(summary);
+                    details.appendChild(grid);
+                    container.appendChild(details);
                 });
 
-                details.appendChild(summary);
-                details.appendChild(grid);
-                container.appendChild(details);
+                // 3. Aplicamos filtros y estadísticas tras el renderizado
+                applyFilter();
+                updateStats();
+            }
+
+            // --- FUNCIONES DE INTERFAZ ---
+
+            function toggleMenu(event) {
+                event.stopPropagation();
+                const menu = document.getElementById('dropdown-menu');
+                menu.classList.toggle('hidden');
+            }
+
+            // Cerrar menú al hacer clic fuera
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('dropdown-menu');
+                const btn = document.getElementById('btn-menu');
+                if (!menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== btn) {
+                    menu.classList.add('hidden');
+                }
             });
 
-            // 3. Aplicamos filtros y estadísticas tras el renderizado
-            applyFilter();
-            updateStats();
-        }
+            // --- FUNCIONES DE IMPORTACIÓN Y EXPORTACIÓN ---
 
-        // --- FUNCIONES DE INTERFAZ ---
-
-        function toggleMenu(event) {
-            event.stopPropagation();
-            const menu = document.getElementById('dropdown-menu');
-            menu.classList.toggle('hidden');
-        }
-
-        // Cerrar menú al hacer clic fuera
-        document.addEventListener('click', (e) => {
-            const menu = document.getElementById('dropdown-menu');
-            const btn = document.getElementById('btn-menu');
-            if (!menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== btn) {
-                menu.classList.add('hidden');
-            }
-        });
-
-        // --- FUNCIONES DE IMPORTACIÓN Y EXPORTACIÓN ---
-
-        function exportData() {
-            document.getElementById('dropdown-menu').classList.add('hidden');
-            
-            const exportArray = [];
-            albumStructure.forEach(section => {
-                section.stickers.forEach(sticker => {
-                    const qty = collection[sticker.id] || 0;
-                    for (let i = 0; i < qty; i++) {
-                        exportArray.push(sticker.id);
-                    }
-                });
-            });
-
-            const exportString = exportArray.join(', ');
-
-            if (exportString.length === 0) {
-                alert('Tu álbum está vacío. No hay datos para exportar.');
-                return;
-            }
-
-            // Copiar al portapapeles (funciona bien con grandes volúmenes de datos en contextos seguros)
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(exportString).then(() => {
-                    alert('¡ÉXITO!\n\nTodos tus datos (códigos de figuritas) han sido copiados al portapapeles. Ya puedes pegarlos en un mensaje, nota o archivo para guardarlos.');
-                }).catch(err => {
-                    console.error('Error al copiar:', err);
-                    alert('Hubo un error al intentar copiar automáticamente. Por favor, asegúrate de dar permisos de portapapeles al sitio.');
-                });
-            } else {
-                alert('Tu navegador no permite el copiado automático. Asegúrate de estar usando una conexión segura (HTTPS).');
-            }
-        }
-
-        // --- MODAL DE IMPORTACIÓN ---
-        function showImportModal() {
-            document.getElementById('dropdown-menu').classList.add('hidden');
-            document.getElementById('import-modal').classList.remove('hidden');
-            document.getElementById('import-textarea').value = '';
-            document.getElementById('import-textarea').focus();
-        }
-
-        function closeImportModal() {
-            document.getElementById('import-modal').classList.add('hidden');
-        }
-
-        function processImport() {
-            const input = document.getElementById('import-textarea').value;
-
-            if (input.trim() === '') {
-                alert('No ingresaste ningún dato.');
-                return;
-            }
-
-            // Confirmación extra
-            if (!confirm('¿Estás seguro? Esto reemplazará todo tu progreso actual.')) return;
-
-            // Construir Set de IDs válidos (cacheado)
-            if (!processImport._validIds) {
-                processImport._validIds = new Set();
+            function exportData() {
+                document.getElementById('dropdown-menu').classList.add('hidden');
+                
+                const exportArray = [];
                 albumStructure.forEach(section => {
                     section.stickers.forEach(sticker => {
-                        processImport._validIds.add(sticker.id);
+                        const qty = collection[sticker.id] || 0;
+                        for (let i = 0; i < qty; i++) {
+                            exportArray.push(sticker.id);
+                        }
                     });
                 });
+
+                const exportString = exportArray.join(', ');
+
+                if (exportString.length === 0) {
+                    alert('Tu álbum está vacío. No hay datos para exportar.');
+                    return;
+                }
+
+                // Copiar al portapapeles (funciona bien con grandes volúmenes de datos en contextos seguros)
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(exportString).then(() => {
+                        alert('¡ÉXITO!\n\nTodos tus datos (códigos de figuritas) han sido copiados al portapapeles. Ya puedes pegarlos en un mensaje, nota o archivo para guardarlos.');
+                    }).catch(err => {
+                        console.error('Error al copiar:', err);
+                        alert('Hubo un error al intentar copiar automáticamente. Por favor, asegúrate de dar permisos de portapapeles al sitio.');
+                    });
+                } else {
+                    alert('Tu navegador no permite el copiado automático. Asegúrate de estar usando una conexión segura (HTTPS).');
+                }
             }
 
-            const newCollection = {};
-            const codes = input.split(',').map(c => c.trim()).filter(c => c !== '');
-            let validCount = 0;
-            let invalidCount = 0;
-            const invalidSamples = [];
+            // --- MODAL DE IMPORTACIÓN ---
+            function showImportModal() {
+                document.getElementById('dropdown-menu').classList.add('hidden');
+                document.getElementById('import-modal').classList.remove('hidden');
+                document.getElementById('import-textarea').value = '';
+                document.getElementById('import-textarea').focus();
+            }
 
-            codes.forEach(code => {
-                if (processImport._validIds.has(code)) {
-                    newCollection[code] = (newCollection[code] || 0) + 1;
-                    validCount++;
-                } else {
-                    invalidCount++;
-                    if (invalidSamples.length < 5) invalidSamples.push(code);
+            function closeImportModal() {
+                document.getElementById('import-modal').classList.add('hidden');
+            }
+
+            // Cerrar modal con Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('import-modal');
+                    if (!modal.classList.contains('hidden')) {
+                        closeImportModal();
+                    }
                 }
             });
 
-            collection = newCollection;
-            saveCollection();
+            function processImport() {
+                const input = document.getElementById('import-textarea').value;
 
-            renderAlbum();
-            updateStats();
-
-            closeImportModal();
-
-            let msg = `¡Importación exitosa!\n\nSe cargaron ${validCount} figuras válidas.`;
-            if (invalidCount > 0) {
-                msg += `\n\n⚠️ Se ignoraron ${invalidCount} códigos no reconocidos`;
-                if (invalidSamples.length > 0) {
-                    msg += ` (ej: ${invalidSamples.join(', ')}${invalidCount > 5 ? ', ...' : ''})`;
+                if (input.trim() === '') {
+                    alert('No ingresaste ningún dato.');
+                    return;
                 }
-                msg += '.';
-            }
-            alert(msg);
-        }
 
-        function shareStatus() {
-            let missingGroups = [];
-            let duplicatesGroups = [];
+                // Confirmación extra
+                if (!confirm('¿Estás seguro? Esto reemplazará todo tu progreso actual.')) return;
 
-            // Recorremos la estructura y agrupamos los IDs por sección
-            albumStructure.forEach(section => {
-                let secMissing = [];
-                let secDups = [];
+                // Construir Set de IDs válidos (cacheado)
+                if (!processImport._validIds) {
+                    processImport._validIds = new Set();
+                    albumStructure.forEach(section => {
+                        section.stickers.forEach(sticker => {
+                            processImport._validIds.add(sticker.id);
+                        });
+                    });
+                }
 
-                section.stickers.forEach(sticker => {
-                    const qty = collection[sticker.id] || 0;
-                    if (qty === 0) {
-                        secMissing.push(sticker.id);
-                    } else if (qty > 1) {
-                        secDups.push(`${sticker.id}(+${qty - 1})`);
+                const newCollection = {};
+                const codes = input.split(',').map(c => c.trim()).filter(c => c !== '');
+                let validCount = 0;
+                let invalidCount = 0;
+                const invalidSamples = [];
+
+                codes.forEach(code => {
+                    if (processImport._validIds.has(code)) {
+                        newCollection[code] = (newCollection[code] || 0) + 1;
+                        validCount++;
+                    } else {
+                        invalidCount++;
+                        if (invalidSamples.length < 5) invalidSamples.push(code);
                     }
                 });
 
-                // Si la sección tiene faltantes, unimos sus IDs y los guardamos como un grupo
-                if (secMissing.length > 0) {
-                    missingGroups.push(secMissing.join(', '));
-                }
+                collection = newCollection;
+                saveCollection();
 
-                // Si la sección tiene repetidas, unimos sus IDs y los guardamos como un grupo
-                if (secDups.length > 0) {
-                    duplicatesGroups.push(secDups.join(', '));
-                }
-            });
+                renderAlbum();
 
-            // Construimos el mensaje uniendo cada grupo con un salto de línea (\n)
-            let message = "❌ FALTAN:\n";
-            if (missingGroups.length > 0) {
-                message += missingGroups.join('\n') + "\n\n";
-            } else {
-                message += "0\n\n";
+                closeImportModal();
+
+                let msg = `¡Importación exitosa!\n\nSe cargaron ${validCount} figuras válidas.`;
+                if (invalidCount > 0) {
+                    msg += `\n\n⚠️ Se ignoraron ${invalidCount} códigos no reconocidos`;
+                    if (invalidSamples.length > 0) {
+                        msg += ` (ej: ${invalidSamples.join(', ')}${invalidCount > 5 ? ', ...' : ''})`;
+                    }
+                    msg += '.';
+                }
+                alert(msg);
             }
 
-            message += "🔁 REPETIDAS:\n";
-            if (duplicatesGroups.length > 0) {
-                message += duplicatesGroups.join('\n');
-            } else {
-                message += "0";
-            }
+            function shareStatus() {
+                let missingGroups = [];
+                let duplicatesGroups = [];
 
-            // Lógica para compartir
-            if (navigator.share && window.isSecureContext) {
-                navigator.share({
-                    title: 'Faltantes y Repetidas',
-                    text: message
-                }).catch(err => {
-                    console.log("Compartir cancelado o falló:", err);
+                // Recorremos la estructura y agrupamos los IDs por sección
+                albumStructure.forEach(section => {
+                    let secMissing = [];
+                    let secDups = [];
+
+                    section.stickers.forEach(sticker => {
+                        const qty = collection[sticker.id] || 0;
+                        if (qty === 0) {
+                            secMissing.push(sticker.id);
+                        } else if (qty > 1) {
+                            secDups.push(`${sticker.id}(+${qty - 1})`);
+                        }
+                    });
+
+                    // Si la sección tiene faltantes, unimos sus IDs y los guardamos como un grupo
+                    if (secMissing.length > 0) {
+                        missingGroups.push(secMissing.join(', '));
+                    }
+
+                    // Si la sección tiene repetidas, unimos sus IDs y los guardamos como un grupo
+                    if (secDups.length > 0) {
+                        duplicatesGroups.push(secDups.join(', '));
+                    }
+                });
+
+                // Construimos el mensaje uniendo cada grupo con un salto de línea (\n)
+                let message = "❌ FALTAN:\n";
+                if (missingGroups.length > 0) {
+                    message += missingGroups.join('\n') + "\n\n";
+                } else {
+                    message += "0\n\n";
+                }
+
+                message += "🔁 REPETIDAS:\n";
+                if (duplicatesGroups.length > 0) {
+                    message += duplicatesGroups.join('\n');
+                } else {
+                    message += "0";
+                }
+
+                // Lógica para compartir
+                if (navigator.share && window.isSecureContext) {
+                    navigator.share({
+                        title: 'Faltantes y Repetidas',
+                        text: message
+                    }).catch(err => {
+                        console.log("Compartir cancelado o falló:", err);
+                        fallbackCopy(message);
+                    });
+                } else {
                     fallbackCopy(message);
-                });
-            } else {
-                fallbackCopy(message);
-            }
-        }
-
-        // Función auxiliar para copiar al portapapeles
-        function fallbackCopy(text) {
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(() => {
-                    alert('¡Lista copiada al portapapeles!\n\nYa puedes pegarla en WhatsApp, Facebook o Telegram.');
-                }).catch(() => {
-                    prompt('Copia tu lista manualmente (Ctrl+C / Cmd+C):', text);
-                });
-            } else {
-                prompt('Copia tu lista manualmente (Ctrl+C / Cmd+C):', text);
-            }
-        }
-
-        function toggleSort() {
-            // Definimos el orden del ciclo
-            const sortOptions = ['default', 'alpha', 'percent-desc', 'percent-asc'];
-
-            // Buscamos cuál es el estado actual y pasamos al siguiente
-            const currentIndex = sortOptions.indexOf(currentSortOrder);
-            const nextIndex = (currentIndex + 1) % sortOptions.length;
-            currentSortOrder = sortOptions[nextIndex];
-
-            // Actualizar Icono y Texto
-            const btnSort = document.getElementById('btn-sort');
-            const btnSortSpan = btnSort.querySelector('span');
-            
-            let iconHtml = '';
-            let text = '';
-
-            if (currentSortOrder === 'default') {
-                iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-3 3-3-3"/><path d="M12 3v18"/><path d="m9 6 3-3 3 3"/></svg>';
-                text = 'Ordenar: Defecto';
-            } else if (currentSortOrder === 'alpha') {
-                iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m11 18-3 3-3-3"/><path d="M7 21V3"/><path d="m11 6-3-3-3 3"/><path d="M15 5h5"/><path d="M15 10h5"/><path d="M15 15h5"/><path d="M15 20h5"/></svg>';
-                text = 'Ordenar: A-Z';
-            } else if (currentSortOrder === 'percent-desc') {
-                iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h4"/><path d="M11 8h7"/><path d="M11 12h10"/></svg>';
-                text = 'Ordenar: % Mayor';
-            } else if (currentSortOrder === 'percent-asc') {
-                iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="M11 12h4"/><path d="M11 16h7"/><path d="M11 20h10"/></svg>';
-                text = 'Ordenar: % Menor';
-            }
-
-            btnSort.innerHTML = `${iconHtml} <span class="hidden sm:inline">${text}</span>`;
-
-            // Re-renderizamos para aplicar el nuevo orden
-            renderAlbum();
-        }
-
-        // Función auxiliar para saber el % de una sección antes de renderizarla
-        function getSectionPercentage(section) {
-            let sectionTotal = section.stickers.length;
-            if (sectionTotal === 0) return 0;
-
-            let sectionFound = 0;
-            section.stickers.forEach(sticker => {
-                if ((collection[sticker.id] || 0) > 0) {
-                    sectionFound++;
                 }
-            });
+            }
 
-            return (sectionFound / sectionTotal) * 100;
-        }
+            // Función auxiliar para copiar al portapapeles
+            function fallbackCopy(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('¡Lista copiada al portapapeles!\n\nYa puedes pegarla en WhatsApp, Facebook o Telegram.');
+                    }).catch(() => {
+                        prompt('Copia tu lista manualmente (Ctrl+C / Cmd+C):', text);
+                    });
+                } else {
+                    prompt('Copia tu lista manualmente (Ctrl+C / Cmd+C):', text);
+                }
+            }
 
-            // --- API PÚBLICA (expuesta a window para los onclick handlers) ---
-            const publicAPI = {
-                updateSticker,
-                setFilter,
-                toggleSort,
-                toggleAllSections,
-                toggleMenu,
-                exportData,
-                showImportModal,
-                closeImportModal,
-                processImport,
-                shareStatus
-            };
+            function toggleSort() {
+                // Definimos el orden del ciclo
+                const sortOptions = ['default', 'alpha', 'percent-desc', 'percent-asc'];
 
-            // Inicializar la App
-            document.addEventListener('DOMContentLoaded', init);
+                // Buscamos cuál es el estado actual y pasamos al siguiente
+                const currentIndex = sortOptions.indexOf(currentSortOrder);
+                const nextIndex = (currentIndex + 1) % sortOptions.length;
+                currentSortOrder = sortOptions[nextIndex];
 
-            return publicAPI;
+                // Actualizar Icono y Texto
+                const btnSort = document.getElementById('btn-sort');
+                const btnSortSpan = btnSort.querySelector('span');
+                
+                let iconHtml = '';
+                let text = '';
+
+                if (currentSortOrder === 'default') {
+                    iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-3 3-3-3"/><path d="M12 3v18"/><path d="m9 6 3-3 3 3"/></svg>';
+                    text = 'Ordenar: Defecto';
+                } else if (currentSortOrder === 'alpha') {
+                    iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m11 18-3 3-3-3"/><path d="M7 21V3"/><path d="m11 6-3-3-3 3"/><path d="M15 5h5"/><path d="M15 10h5"/><path d="M15 15h5"/><path d="M15 20h5"/></svg>';
+                    text = 'Ordenar: A-Z';
+                } else if (currentSortOrder === 'percent-desc') {
+                    iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h4"/><path d="M11 8h7"/><path d="M11 12h10"/></svg>';
+                    text = 'Ordenar: % Mayor';
+                } else if (currentSortOrder === 'percent-asc') {
+                    iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="M11 12h4"/><path d="M11 16h7"/><path d="M11 20h10"/></svg>';
+                    text = 'Ordenar: % Menor';
+                }
+
+                btnSort.innerHTML = `${iconHtml} <span class="hidden sm:inline">${text}</span>`;
+
+                reorderAlbum();
+            }
+
+            // Función auxiliar para saber el % de una sección antes de renderizarla
+            function getSectionPercentage(section) {
+                let sectionTotal = section.stickers.length;
+                if (sectionTotal === 0) return 0;
+
+                let sectionFound = 0;
+                section.stickers.forEach(sticker => {
+                    if ((collection[sticker.id] || 0) > 0) {
+                        sectionFound++;
+                    }
+                });
+
+                return (sectionFound / sectionTotal) * 100;
+            }
+
+                // --- API PÚBLICA (expuesta a window para los onclick handlers) ---
+                const publicAPI = {
+                    updateSticker,
+                    setFilter,
+                    toggleSort,
+                    toggleAllSections,
+                    toggleMenu,
+                    exportData,
+                    showImportModal,
+                    closeImportModal,
+                    processImport,
+                    shareStatus
+                };
+
+                // Inicializar la App
+                document.addEventListener('DOMContentLoaded', init);
+
+                return publicAPI;
         })();
 
         // Exponer API pública en window para los handlers inline
