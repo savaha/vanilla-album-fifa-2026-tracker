@@ -286,7 +286,7 @@
                 const completedList = $('completed-list');
                 if (completed.length > 0) {
                     completedList.innerHTML = completed.map(s => `
-                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold" style="background: var(--owned-bg); border: 1px solid var(--owned-border); color: var(--owned);">
+                        <span class="px-3 py-1 rounded-lg text-[11px] font-black" style="background: rgba(62,184,116,0.15); border: 1.5px solid rgba(62,184,116,0.4); color: var(--owned);">
                             ${s.id}
                         </span>
                     `).join('');

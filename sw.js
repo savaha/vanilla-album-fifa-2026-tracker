@@ -1,5 +1,4 @@
-// Incrementa VERSION cada vez que modifiques index.html, js/data.js o cualquier asset.
-const VERSION = 5;
+const VERSION = 6;
 const CACHE_NAME = `fullalbum-v${VERSION}`;
 const ASSETS = [
   './',
