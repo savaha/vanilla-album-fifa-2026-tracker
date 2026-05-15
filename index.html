@@ -34,12 +34,28 @@
             --text-dim: #6e6d68;
             --text-muted: #4a4945;
             --accent: #c4a144;
+            --accent-rgb: 196,161,68;
             --owned: #3eb874;
-            --owned-bg: rgba(62,184,116,0.08);
-            --owned-border: rgba(62,184,116,0.25);
+            --owned-rgb: 62,184,116;
+            --owned-active-bg: rgba(62,184,116,0.12);
+            --owned-active-border: rgba(62,184,116,0.35);
             --whistle: #e05560;
-            --team-badge: #5b8ec9;
-            --emblem-badge: #c4955b;
+            --whistle-rgb: 224,85,96;
+            --emblem: #c4955b;
+            --emblem-dim: #6b5a42;
+            --emblem-rgb: 196,149,91;
+            --team: #5b8ec9;
+            --team-dim: #3d5170;
+            --team-rgb: 91,142,201;
+            --btn-text: #b0ada5;
+            --btn-bg: rgba(255,255,255,0.04);
+            --btn-border: rgba(255,255,255,0.1);
+            --counter-bg: rgba(255,255,255,0.03);
+            --counter-border: rgba(255,255,255,0.06);
+            --bar-bg: rgba(0,0,0,0.55);
+            --dup-bg: rgba(224,85,96,0.1);
+            --dup-border: rgba(224,85,96,0.18);
+            --card-owned-bg: #19241c;
         }
 
         body {
@@ -61,8 +77,8 @@
         .card-missing .sticker-desc { color: #3d3c38; }
 
         .card-owned {
-            background: #19241c;
-            border: 1.5px solid rgba(62,184,116,0.45);
+            background: var(--card-owned-bg);
+            border: 1.5px solid rgba(var(--owned-rgb), 0.45);
             color: var(--text);
             box-shadow: 0 0 6px rgba(62,184,116,0.12), 0 1px 2px rgba(0,0,0,0.3);
         }
@@ -111,6 +127,40 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+        /* ── Type Badges ── */
+        .type-badge {
+            position: absolute; top: 0.375rem; left: 0.375rem;
+            font-size: 7px; font-weight: 900; text-transform: uppercase;
+            padding: 0.125rem 0.25rem; border-radius: 0.25rem; z-index: 10;
+            border: 1px solid transparent;
+        }
+        .emblem-badge { background: rgba(var(--emblem-rgb), 0.12); color: var(--emblem); border-color: rgba(var(--emblem-rgb), 0.2); }
+        .team-badge   { background: rgba(var(--team-rgb), 0.12);   color: var(--team);   border-color: rgba(var(--team-rgb), 0.2); }
+        .badge-dim.emblem-badge { background: rgba(var(--emblem-rgb), 0.04); color: var(--emblem-dim); border-color: rgba(var(--emblem-rgb), 0.08); }
+        .badge-dim.team-badge   { background: rgba(var(--team-rgb), 0.04);   color: var(--team-dim);   border-color: rgba(var(--team-rgb), 0.08); }
+
+        /* ── Summary badges ── */
+        .group-badge {
+            font-size: 9px; font-weight: 900; padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem; flex-shrink: 0;
+            background: rgba(var(--accent-rgb), 0.08); color: var(--accent);
+            border: 1px solid rgba(var(--accent-rgb), 0.15);
+        }
+        .dup-badge {
+            font-size: 9px; font-weight: 700; padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem; white-space: nowrap;
+            background: var(--dup-bg); color: var(--whistle); border: 1px solid var(--dup-border);
+        }
+        .counter-badge {
+            font-size: 9px; font-weight: 700; padding: 0.125rem 0.375rem;
+            border-radius: 9999px; white-space: nowrap; transition: all 0.15s;
+            background: var(--counter-bg); color: var(--text-dim); border: 1px solid var(--border);
+        }
+        .counter-badge.completed {
+            background: rgba(var(--owned-rgb), 0.1); color: var(--owned);
+            border-color: rgba(var(--owned-rgb), 0.25);
+        }
 
         /* ── Utility ── */
         .hidden-card { display: none !important; }
@@ -244,8 +294,8 @@
         </div>
     </main>
 
-        <script src="js/data.js"></script>
-        <script src="js/app.js"></script>
+        <script src="js/data.js" defer></script>
+        <script src="js/app.js" defer></script>
     <!-- Modal de Importación -->
     <div id="import-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4" style="background: rgba(10,11,13,0.92); backdrop-filter: blur(12px);">
         <div class="w-full max-w-lg border rounded-2xl shadow-2xl overflow-hidden" style="background: var(--surface-alt); border-color: var(--border);">

@@ -1,5 +1,20 @@
         // 2. MÓDULO PRINCIPAL (IIFE para encapsulamiento)
         const App = (() => {
+            // ── ICONOS SVG ──
+            const I = {
+                chevron: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+                minus: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/></svg>',
+                plus: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+                sort: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-3 3-3-3"/><path d="M12 3v18"/><path d="m9 6 3-3 3 3"/></svg>',
+                expand: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>',
+                import: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
+                export: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>',
+            };
+
+            // ── CACHE DOM ──
+            const $ = (id) => { $.cache[id] = $.cache[id] || document.getElementById(id); return $.cache[id]; };
+            $.cache = {};
+
             // ESTADO DE LA APLICACIÓN (privado)
             let collection = {};
             try {
@@ -28,10 +43,10 @@
 
             function buildTypeBadge(sticker, isMissing) {
                 if (sticker.type === 'emblem') {
-                    return `<div id="type-badge-${sticker.id}" class="absolute top-1.5 left-1.5 text-[7px] font-black uppercase px-1 py-0.5 rounded z-10" style="background:rgba(196,149,91,${isMissing ? '0.04' : '0.12'});color:${isMissing ? '#6b5a42' : '#c4955b'};border:1px solid rgba(196,149,91,${isMissing ? '0.08' : '0.2'});">Emblem</div>`;
+                    return `<div id="type-badge-${sticker.id}" class="type-badge emblem-badge ${isMissing ? 'badge-dim' : ''}">Emblem</div>`;
                 }
                 if (sticker.type === 'team') {
-                    return `<div id="type-badge-${sticker.id}" class="absolute top-1.5 left-1.5 text-[7px] font-black uppercase px-1 py-0.5 rounded z-10" style="background:rgba(91,142,201,${isMissing ? '0.04' : '0.12'});color:${isMissing ? '#3d5170' : '#5b8ec9'};border:1px solid rgba(91,142,201,${isMissing ? '0.08' : '0.2'});">Team</div>`;
+                    return `<div id="type-badge-${sticker.id}" class="type-badge team-badge ${isMissing ? 'badge-dim' : ''}">Team</div>`;
                 }
                 return '';
             }
@@ -51,18 +66,18 @@
                         <div class="sticker-desc text-[9px] sm:text-[10px] leading-[1.1] text-center mt-1 w-full opacity-100 overflow-hidden line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${sticker.desc}</div>
                     </div>
                     ${rotateClose}
-                    <div class="absolute inset-x-px bottom-px flex items-center justify-center gap-3 p-1.5 rounded-b-md" style="background: rgba(0,0,0,0.55);">
+                    <div class="absolute inset-x-px bottom-px flex items-center justify-center gap-3 p-1.5 rounded-b-md" style="background: var(--bar-bg);">
                         <button onclick="updateSticker('${sticker.id}', -1)" id="btn-minus-${sticker.id}" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors hover:bg-white/20 text-white border border-white/10 ${isMissing ? 'opacity-50 pointer-events-none' : ''}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path></svg>
+                            ${I.minus}
                         </button>
                         <button onclick="updateSticker('${sticker.id}', 1)" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors active:scale-90" style="background: var(--owned); color: #fff;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+                            ${I.plus}
                         </button>
                     </div>`;
             }
 
             function buildSummary(section) {
-                const groupBadge = section.group ? `<span class="text-[9px] font-black px-1 py-0.5 rounded flex-shrink-0" style="background:rgba(196,161,68,0.08);color:var(--accent);border:1px solid rgba(196,161,68,0.15);">${section.group}</span>` : '';
+                const groupBadge = section.group ? `<span class="group-badge">${section.group}</span>` : '';
                 return `
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
@@ -70,12 +85,10 @@
                     </div>
                     <span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);">0%</span>
                     <div class="flex items-center gap-1.5 ml-1">
-                        <span id="dup-val-${section.id}" class="hidden text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap" style="background: rgba(224,85,96,0.1); color: var(--whistle); border: 1px solid rgba(224,85,96,0.18);">0 repes</span><span id="counter-val-${section.id}" class="text-[9px] font-bold px-1.5 py-0.5 rounded-full transition-colors whitespace-nowrap" style="background: rgba(255,255,255,0.03); color: #6e6d68; border: 1px solid var(--border);">0/0</span>
+                        <span id="dup-val-${section.id}" class="hidden dup-badge">0 repes</span><span id="counter-val-${section.id}" class="counter-badge">0/0</span>
                     </div>
                 </div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0">
-                    <path d="m6 9 6 6 6-6"></path>
-                </svg>`;
+                <span class="text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0">${I.chevron}</span>`;
             }
 
             function buildDashboard() {
@@ -173,13 +186,9 @@
                         sectionCounter.innerText = `${sectionFound}/${sectionTotal}`;
 
                         if (sectionFound === sectionTotal) {
-                            sectionCounter.style.background = 'rgba(62,184,116,0.1)';
-                            sectionCounter.style.color = '#3eb874';
-                            sectionCounter.style.borderColor = 'rgba(62,184,116,0.25)';
+                            sectionCounter.classList.add('completed');
                         } else {
-                            sectionCounter.style.background = 'rgba(255,255,255,0.03)';
-                            sectionCounter.style.color = '#6e6d68';
-                            sectionCounter.style.borderColor = 'rgba(255,255,255,0.06)';
+                            sectionCounter.classList.remove('completed');
                         }
                     }
 
@@ -188,7 +197,7 @@
                     const percentEl = document.getElementById(`percent-val-${section.id}`);
                     if (percentEl) {
                         percentEl.innerText = `${sectionPercent}%`;
-                        percentEl.style.color = sectionPercent === 100 ? '#3eb874' : '#c4a144';
+                        percentEl.style.color = sectionPercent === 100 ? 'var(--owned)' : 'var(--accent)';
                     }
 
                     // 3. Acumular datos para el dashboard
@@ -215,27 +224,25 @@
                 const percentage = globalTotal === 0 ? 0 : Math.round((globalFound / globalTotal) * 100);
 
                 // Actualizar barra de progreso global
-                document.getElementById('found-count').innerText = globalFound;
-                document.getElementById('total-count').innerText = globalTotal;
-                document.getElementById('physical-count').innerText = globalFound + globalDuplicates;
-                document.getElementById('percentage-count').innerText = `${percentage}%`;
-                document.getElementById('progress-bar').style.width = `${percentage}%`;
+                $('found-count').innerText = globalFound;
+                $('total-count').innerText = globalTotal;
+                $('physical-count').innerText = globalFound + globalDuplicates;
+                $('percentage-count').innerText = `${percentage}%`;
+                $('progress-bar').style.width = `${percentage}%`;
 
                 // Textos de los botones con cantidades
                 const totalMissing = globalTotal - globalFound;
 
-                const missingValEl = document.getElementById('btn-missing-val');
+                const missingValEl = $('btn-missing-val');
                 if (missingValEl) missingValEl.innerText = `(${totalMissing})`;
-
-                const ownedValEl = document.getElementById('btn-owned-val');
+                const ownedValEl = $('btn-owned-val');
                 if (ownedValEl) ownedValEl.innerText = `(${globalFound})`;
-
-                const duplicatesValEl = document.getElementById('btn-duplicates-val');
+                const duplicatesValEl = $('btn-duplicates-val');
                 if (duplicatesValEl) duplicatesValEl.innerText = `(${globalDuplicates})`;
 
 
                 // --- Lógica del Dashboard Superior (actualización dirigida) ---
-                const dashboardContainer = document.getElementById('dashboard-stats');
+                const dashboardContainer = $('dashboard-stats');
                 if (!dashboardContainer) return;
 
                 // Inicializar estructura estática del dashboard una sola vez
@@ -250,7 +257,7 @@
                     .sort((a, b) => b.missing - a.missing)
                     .slice(0, 3);
 
-                const topMissingList = document.getElementById('top-missing-list');
+                const topMissingList = $('top-missing-list');
                 if (topMissing.length > 0) {
                     topMissingList.innerHTML = topMissing.map(s => `
                         <div class="flex items-center justify-between text-xs" style="padding: 3px 0; border-bottom: 1px solid var(--border);">
@@ -264,9 +271,8 @@
 
                 // 2. Actualizar Completadas
                 const completed = sectionData.filter(s => s.missing === 0);
-                document.getElementById('completed-text').textContent = `Secciones completadas (${completed.length})`;
-
-                const completedList = document.getElementById('completed-list');
+                $('completed-text').textContent = `Secciones completadas (${completed.length})`;
+                const completedList = $('completed-list');
                 if (completed.length > 0) {
                     completedList.innerHTML = completed.map(s => `
                         <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold" style="background: var(--owned-bg); border: 1px solid var(--owned-border); color: var(--owned);">
@@ -289,18 +295,18 @@
                 // Actualizar estilos de los botones
                 const filters = ['missing', 'owned', 'duplicates'];
                 filters.forEach(f => {
-                    const btn = document.getElementById(`btn-filter-${f}`);
+                    const btn = $(`btn-filter-${f}`);
                     if (!btn) return;
                     if (f === currentFilter) {
-                        btn.style.background = 'rgba(62,184,116,0.12)';
-                        btn.style.color = '#3eb874';
-                        btn.style.borderColor = 'rgba(62,184,116,0.35)';
+                        btn.style.background = 'var(--owned-active-bg)';
+                        btn.style.color = 'var(--owned)';
+                        btn.style.borderColor = 'var(--owned-active-border)';
                         const counter = btn.querySelector('span');
-                        if (counter) counter.style.color = '#3eb874';
+                        if (counter) counter.style.color = 'var(--owned)';
                     } else {
-                        btn.style.background = 'rgba(255,255,255,0.04)';
-                        btn.style.color = '#b0ada5';
-                        btn.style.borderColor = 'rgba(255,255,255,0.1)';
+                        btn.style.background = 'var(--btn-bg)';
+                        btn.style.color = 'var(--btn-text)';
+                        btn.style.borderColor = 'var(--btn-border)';
                         const counter = btn.querySelector('span');
                         if (counter) counter.style.color = 'var(--text)';
                     }
@@ -369,7 +375,7 @@
             // 4. GENERACIÓN DE LA INTERFAZ
 
             function reorderAlbum() {
-                const container = document.getElementById('album-container');
+                const container = $('album-container');
                 const prevSort = container.dataset.sortOrder || '';
 
                 // Cambio estructural (implica grupos): render completo
@@ -410,7 +416,7 @@
             }
 
             function renderAlbum() {
-                const container = document.getElementById('album-container');
+                const container = $('album-container');
                 container.dataset.sortOrder = currentSortOrder;
                 container.innerHTML = '';
 
@@ -514,14 +520,13 @@
 
             function toggleMenu(event) {
                 event.stopPropagation();
-                const menu = document.getElementById('dropdown-menu');
-                menu.classList.toggle('hidden');
+                $('dropdown-menu').classList.toggle('hidden');
             }
 
             // Cerrar menú al hacer clic fuera
             document.addEventListener('click', (e) => {
-                const menu = document.getElementById('dropdown-menu');
-                const btn = document.getElementById('btn-menu');
+                const menu = $('dropdown-menu');
+                const btn = $('btn-menu');
                 if (!menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== btn) {
                     menu.classList.add('hidden');
                 }
@@ -530,7 +535,7 @@
             // --- FUNCIONES DE IMPORTACIÓN Y EXPORTACIÓN ---
 
             function exportData() {
-                document.getElementById('dropdown-menu').classList.add('hidden');
+                $('dropdown-menu').classList.add('hidden');
                 
                 const exportArray = [];
                 albumStructure.forEach(section => {
@@ -564,28 +569,26 @@
 
             // --- MODAL DE IMPORTACIÓN ---
             function showImportModal() {
-                document.getElementById('dropdown-menu').classList.add('hidden');
-                document.getElementById('import-modal').classList.remove('hidden');
-                document.getElementById('import-textarea').value = '';
-                document.getElementById('import-textarea').focus();
+                $('dropdown-menu').classList.add('hidden');
+                $('import-modal').classList.remove('hidden');
+                const ta = $('import-textarea');
+                ta.value = '';
+                ta.focus();
             }
 
             function closeImportModal() {
-                document.getElementById('import-modal').classList.add('hidden');
+                $('import-modal').classList.add('hidden');
             }
 
             // Cerrar modal con Escape
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    const modal = document.getElementById('import-modal');
-                    if (!modal.classList.contains('hidden')) {
-                        closeImportModal();
-                    }
+                if (e.key === 'Escape' && !$('import-modal').classList.contains('hidden')) {
+                    closeImportModal();
                 }
             });
 
             function processImport() {
-                const input = document.getElementById('import-textarea').value;
+                const input = $('import-textarea').value;
 
                 if (input.trim() === '') {
                     alert('No ingresaste ningún dato.');
@@ -720,7 +723,7 @@
                 currentSortOrder = sortOptions[nextIndex];
 
                 // Actualizar Icono y Texto
-                const btnSort = document.getElementById('btn-sort');
+                const btnSort = $('btn-sort');
                 const btnSortSpan = btnSort.querySelector('span');
                 
                 let iconHtml = '';
@@ -747,15 +750,10 @@
 
             // Actualizar estilo visual del badge de tipo (emblem/team) al cambiar estado
             function updateTypeBadge(badge, owned) {
-                const isEmblem = badge.textContent === 'Emblem';
-                if (isEmblem) {
-                    badge.style.background = `rgba(196,149,91,${owned ? '0.12' : '0.04'})`;
-                    badge.style.color = owned ? '#c4955b' : '#6b5a42';
-                    badge.style.borderColor = `rgba(196,149,91,${owned ? '0.2' : '0.08'})`;
+                if (owned) {
+                    badge.classList.remove('badge-dim');
                 } else {
-                    badge.style.background = `rgba(91,142,201,${owned ? '0.12' : '0.04'})`;
-                    badge.style.color = owned ? '#5b8ec9' : '#3d5170';
-                    badge.style.borderColor = `rgba(91,142,201,${owned ? '0.2' : '0.08'})`;
+                    badge.classList.add('badge-dim');
                 }
             }
 
