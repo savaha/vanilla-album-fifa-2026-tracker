@@ -61,10 +61,10 @@
         .card-missing .sticker-desc { color: #3d3c38; }
 
         .card-owned {
-            background: #1c1f24;
-            border: 1px solid var(--owned-border);
+            background: #19241c;
+            border: 1.5px solid rgba(62,184,116,0.45);
             color: var(--text);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 0 6px rgba(62,184,116,0.12), 0 1px 2px rgba(0,0,0,0.3);
         }
         .card-owned .sticker-id { color: #e4e2dc; }
         .card-owned .sticker-desc { color: #9e9b92; }
@@ -79,7 +79,7 @@
         .card-owned:active {
             transform: scale(0.96);
             border-color: var(--owned);
-            box-shadow: 0 0 0 2px rgba(62,184,116,0.2);
+            box-shadow: 0 0 12px rgba(62,184,116,0.35), 0 0 0 3px rgba(62,184,116,0.15);
         }
         .card-missing:active {
             transform: scale(0.97);
@@ -88,7 +88,7 @@
             .card-owned:hover {
                 transform: translateY(-1px);
                 border-color: var(--owned);
-                box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+                box-shadow: 0 0 16px rgba(62,184,116,0.25), 0 3px 12px rgba(0,0,0,0.5);
             }
         }
 
@@ -172,12 +172,12 @@
                     <div id="dropdown-menu"
                         class="hidden absolute right-0 mt-2 w-48 border rounded-xl shadow-2xl z-[100] overflow-hidden" style="background: var(--surface-alt); border-color: var(--border);">
                         <button onclick="showImportModal()"
-                            class="w-full flex items-center gap-3 px-4 py-3.5 text-[10px] font-bold uppercase border-b transition-colors text-left" style="border-color: var(--border); color: var(--text-dim);">
+                            class="w-full flex items-center gap-3 px-4 py-3.5 text-[10px] font-bold uppercase border-b transition-colors text-left" style="border-color: var(--border); color: #c4b896;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                             Importar Datos
                         </button>
                         <button onclick="exportData()"
-                            class="w-full flex items-center gap-3 px-4 py-3.5 text-[10px] font-bold uppercase transition-colors text-left" style="color: var(--owned);">
+                            class="w-full flex items-center gap-3 px-4 py-3.5 text-[10px] font-bold uppercase transition-colors text-left" style="color: #6db87d;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                             Exportar Datos
                         </button>
@@ -187,19 +187,20 @@
         </div>
 
         <!-- Stats Row -->
-        <div class="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div class="p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
 
             <!-- Progress Card -->
-            <div class="flex flex-col gap-3 p-5 rounded-2xl border" style="background: var(--surface); border-color: var(--border);">
+            <div class="flex flex-col gap-2 p-3.5 rounded-2xl border" style="background: var(--surface); border-color: var(--border);">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold uppercase tracking-[0.15em]" style="color: var(--text-dim);">Progreso Total</span>
-                    <span id="percentage-count" class="text-2xl font-display tracking-wider" style="color: var(--owned);">0%</span>
+                    <span id="percentage-count" class="text-xl font-display tracking-wider" style="color: var(--owned);">0%</span>
                 </div>
-                <div class="relative h-2.5 w-full rounded-full overflow-hidden" style="background: rgba(255,255,255,0.04);">
+                <div class="relative h-2 w-full rounded-full overflow-hidden" style="background: rgba(255,255,255,0.04);">
                     <div id="progress-bar" class="absolute h-full transition-all duration-700 ease-out" style="width: 0%"></div>
                 </div>
-                <div class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-dim);">
-                    <span id="found-count" style="color: var(--text);">0</span> de <span id="total-count">0</span> stickers
+                <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-dim);">
+                    <span><span id="found-count" style="color: var(--text);">0</span> de <span id="total-count">0</span> únicos</span>
+                    <span><span id="physical-count" style="color: var(--accent);">0</span> total</span>
                 </div>
             </div>
 
@@ -208,19 +209,19 @@
         </div>
 
         <!-- Filter & Sort Bar -->
-        <div class="px-4 sm:px-6 mb-6 flex flex-wrap items-center gap-2">
+        <div class="px-4 sm:px-6 mb-4 flex flex-wrap items-center gap-2">
             <div class="flex flex-wrap gap-1.5">
                 <button onclick="setFilter('missing')" id="btn-filter-missing"
-                    class="h-8 px-3 text-[10px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: rgba(255,255,255,0.03); color: #7a7565; border-color: rgba(255,255,255,0.06);">
-                    Faltan <span id="btn-missing-val" class="ml-0.5" style="opacity: 0.5;"></span>
+                    class="h-8 px-3 text-[10px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: rgba(255,255,255,0.04); color: #b0ada5; border-color: rgba(255,255,255,0.1);">
+                    Faltan <span id="btn-missing-val" class="ml-1 font-black" style="color: var(--text);"></span>
                 </button>
                 <button onclick="setFilter('owned')" id="btn-filter-owned"
-                    class="h-8 px-3 text-[10px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: rgba(255,255,255,0.03); color: #7a7565; border-color: rgba(255,255,255,0.06);">
-                    Tengo <span id="btn-owned-val" class="ml-0.5" style="opacity: 0.5;"></span>
+                    class="h-8 px-3 text-[10px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: rgba(255,255,255,0.04); color: #b0ada5; border-color: rgba(255,255,255,0.1);">
+                    Tengo <span id="btn-owned-val" class="ml-1 font-black" style="color: var(--text);"></span>
                 </button>
                 <button onclick="setFilter('duplicates')" id="btn-filter-duplicates"
-                    class="h-8 px-3 text-[10px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: rgba(255,255,255,0.03); color: #7a7565; border-color: rgba(255,255,255,0.06);">
-                    Repes <span id="btn-duplicates-val" class="ml-0.5" style="opacity: 0.5;"></span>
+                    class="h-8 px-3 text-[10px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: rgba(255,255,255,0.04); color: #b0ada5; border-color: rgba(255,255,255,0.1);">
+                    Repes <span id="btn-duplicates-val" class="ml-1 font-black" style="color: var(--text);"></span>
                 </button>
             </div>
 
@@ -231,7 +232,7 @@
                     <span class="hidden sm:inline">Ordenar: Defecto</span>
                 </button>
                 <button onclick="toggleAllSections()" id="btn-toggle-sections"
-                    class="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-[10px] font-bold uppercase rounded-lg border transition-all active:scale-95" style="background: rgba(255,255,255,0.03); color: #8a8a7a; border-color: rgba(255,255,255,0.08);" title="Colapsar/Expandir Todo">
+                    class="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-[10px] font-bold uppercase rounded-lg border transition-all active:scale-95" style="background: rgba(255,255,255,0.04); color: #b0ada5; border-color: rgba(255,255,255,0.1);" title="Colapsar/Expandir Todo">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
                     <span class="hidden sm:inline">Colapsar Todos</span>
                 </button>
@@ -239,7 +240,7 @@
         </div>
 
 
-        <div id="album-container" class="px-4 sm:px-6 flex flex-col gap-4 pb-20">
+        <div id="album-container" class="px-4 sm:px-6 flex flex-col gap-3 pb-16">
         </div>
     </main>
 
@@ -291,12 +292,12 @@
                 const qtyText = document.getElementById(`qty-${stickerId}`);
                 const btnMinus = document.getElementById(`btn-minus-${stickerId}`);
 
-                if (newQty > 0) {
+                const owned = newQty > 0;
+
+                if (owned) {
                     cardEl.classList.remove('card-missing');
                     cardEl.classList.add('card-owned');
                     btnMinus.classList.remove('opacity-50', 'pointer-events-none');
-
-                    // Mostrar badge de cantidad si es repetida (opcional, como mejora UI)
                     qtyText.innerText = newQty > 1 ? `+${newQty - 1}` : '';
                 } else {
                     cardEl.classList.add('card-missing');
@@ -304,6 +305,10 @@
                     btnMinus.classList.add('opacity-50', 'pointer-events-none');
                     qtyText.innerText = '';
                 }
+
+                // Actualizar badge de tipo (emblem/team) si existe
+                const typeBadge = document.getElementById(`type-badge-${stickerId}`);
+                if (typeBadge) updateTypeBadge(typeBadge, owned);
 
                 applyFilter();
                 updateStats();
@@ -388,6 +393,7 @@
                 // Actualizar barra de progreso global
                 document.getElementById('found-count').innerText = globalFound;
                 document.getElementById('total-count').innerText = globalTotal;
+                document.getElementById('physical-count').innerText = globalFound + globalDuplicates;
                 document.getElementById('percentage-count').innerText = `${percentage}%`;
                 document.getElementById('progress-bar').style.width = `${percentage}%`;
 
@@ -411,16 +417,16 @@
                 // Inicializar estructura estática del dashboard una sola vez
                 if (!dashboardContainer.dataset.initialized) {
                     dashboardContainer.innerHTML = `
-                        <div class="rounded-2xl border p-5" style="background: var(--surface); border-color: var(--border);">
-                            <h3 class="text-[11px] font-bold uppercase tracking-[0.15em] mb-4 flex items-center gap-2" style="color: var(--whistle);">
-                                <span class="w-2 h-2 rounded-full animate-pulse" style="background: var(--whistle);"></span>
-                                Prioridad: Más faltantes
+                        <div class="rounded-2xl border p-3" style="background: var(--surface); border-color: var(--border);">
+                            <h3 class="text-[9px] font-semibold uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5" style="color: var(--whistle);">
+                                <span class="w-1 h-1 rounded-full animate-pulse" style="background: var(--whistle);"></span>
+                                Más faltantes
                             </h3>
-                            <div id="top-missing-list" class="flex flex-col gap-2.5"></div>
+                            <div id="top-missing-list" class="flex flex-col gap-1"></div>
                         </div>
-                        <div class="rounded-2xl border p-5" style="background: var(--surface); border-color: var(--border);">
-                            <h3 id="completed-header" class="text-[11px] font-bold uppercase tracking-[0.15em] mb-4 flex items-center gap-2" style="color: var(--owned);">
-                                <span class="w-2 h-2 rounded-full" style="background: var(--owned);"></span>
+                        <div class="rounded-2xl border p-3" style="background: var(--surface); border-color: var(--border);">
+                            <h3 id="completed-header" class="text-[9px] font-semibold uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5" style="color: var(--owned);">
+                                <span class="w-1 h-1 rounded-full" style="background: var(--owned);"></span>
                                 <span id="completed-text"></span>
                             </h3>
                             <div id="completed-list" class="flex flex-wrap gap-1.5"></div>
@@ -438,9 +444,9 @@
                 const topMissingList = document.getElementById('top-missing-list');
                 if (topMissing.length > 0) {
                     topMissingList.innerHTML = topMissing.map(s => `
-                        <div class="flex items-center justify-between text-sm" style="padding: 8px 0; border-bottom: 1px solid var(--border);">
-                            <span class="truncate" style="color: var(--text-dim);"><span style="font-weight: 700; color: var(--text);">${s.id}</span> · ${s.name}</span>
-                            <span style="font-family: monospace; font-weight: 700; color: var(--whistle);">-${s.missing}</span>
+                        <div class="flex items-center justify-between text-xs" style="padding: 3px 0; border-bottom: 1px solid var(--border);">
+                            <span class="truncate" style="color: var(--text-dim);"><span style="font-weight: 600; color: var(--text);">${s.id}</span> <span style="color: var(--text-muted);">${s.name}</span></span>
+                            <span class="text-[11px]" style="font-weight: 600; color: var(--whistle);">-${s.missing}</span>
                         </div>
                     `).join('');
                 } else {
@@ -477,13 +483,17 @@
                     const btn = document.getElementById(`btn-filter-${f}`);
                     if (!btn) return;
                     if (f === currentFilter) {
-                        btn.style.background = 'rgba(62,184,116,0.1)';
+                        btn.style.background = 'rgba(62,184,116,0.12)';
                         btn.style.color = '#3eb874';
-                        btn.style.borderColor = 'rgba(62,184,116,0.3)';
+                        btn.style.borderColor = 'rgba(62,184,116,0.35)';
+                        const counter = btn.querySelector('span');
+                        if (counter) counter.style.color = '#3eb874';
                     } else {
-                        btn.style.background = 'rgba(255,255,255,0.03)';
-                        btn.style.color = '#6e6d68';
-                        btn.style.borderColor = 'rgba(255,255,255,0.06)';
+                        btn.style.background = 'rgba(255,255,255,0.04)';
+                        btn.style.color = '#b0ada5';
+                        btn.style.borderColor = 'rgba(255,255,255,0.1)';
+                        const counter = btn.querySelector('span');
+                        if (counter) counter.style.color = 'var(--text)';
                     }
                 });
 
@@ -622,12 +632,14 @@
                         lastGroup = section.group;
                         const groupHeader = document.createElement('div');
                         groupHeader.dataset.groupHeader = '';
-                        groupHeader.className = 'mt-10 mb-4 sticky top-0 z-20 bg-[#030712] py-3 border-b border-white/5 flex items-center gap-4';
+                        groupHeader.className = 'mt-6 mb-1 sticky top-0 z-20 py-2.5 border-b flex items-center gap-3';
+                        groupHeader.style.background = 'var(--bg)';
+                        groupHeader.style.borderColor = 'var(--border)';
                         groupHeader.innerHTML = `
                             <div class="h-8 w-8 rounded-lg flex items-center justify-center font-black text-sm" style="background: var(--accent); color: #14161a;">
                                 ${section.group}
                             </div>
-                            <span class="text-sm font-black uppercase tracking-tight" style="color: var(--text);">Grupo ${section.group}</span>
+                            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-dim);">Grupo ${section.group}</span>
                             <div class="flex-1 h-[1px] bg-white/5"></div>
                         `;
                         container.appendChild(groupHeader);
@@ -661,13 +673,14 @@
 
                     // Summary con porcentaje y duplicados por sección
                     const summary = document.createElement('summary');
-                    summary.className = 'flex items-center justify-between gap-2 py-2 cursor-pointer list-none select-none border-b border-gray-800 pb-2 mb-3';
+                    summary.className = 'flex items-center justify-between gap-2 py-2 cursor-pointer list-none select-none border-b pb-2 mb-3';
+                    summary.style.borderColor = 'var(--border)';
                     const groupBadge = section.group ? `<span class="text-[9px] font-black px-1 py-0.5 rounded flex-shrink-0" style="background:rgba(196,161,68,0.08);color:var(--accent);border:1px solid rgba(196,161,68,0.15);">${section.group}</span>` : '';
 
                     summary.innerHTML = `
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
-                        ${groupBadge}<span class="text-[11px] sm:text-sm font-black text-white whitespace-nowrap">${section.id}</span><span class="text-[11px] sm:text-sm font-medium text-gray-500 opacity-60">·</span><span class="text-[11px] sm:text-sm font-bold uppercase tracking-tight text-gray-500 truncate opacity-80">${section.name}</span>
+                        ${groupBadge}<span class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);">${section.id}</span><span class="text-[11px] sm:text-sm font-medium opacity-40" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate" style="color: var(--text-dim);">${section.name}</span>
                     </div>
                     <span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);">0%</span>
                     <div class="flex items-center gap-1.5 ml-1">
@@ -680,25 +693,27 @@
             `;
 
                     const grid = document.createElement('div');
-                    grid.className = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-10 gap-2 mb-6';
+                    grid.className = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-10 gap-2 mb-4';
 
                     section.stickers.forEach(sticker => {
                         const qty = collection[sticker.id] || 0;
                         const isMissing = qty === 0;
                         const card = document.createElement('div');
                         card.id = `card-${sticker.id}`;
-                        card.className = `relative aspect-[3/4] flex flex-col items-center justify-center border rounded-md select-none transition-colors duration-200 ${isMissing ? 'card-missing' : 'card-owned'}`;
+                        card.className = `relative aspect-[5/7] flex flex-col items-center justify-center border rounded-md select-none transition-colors duration-200 ${isMissing ? 'card-missing' : 'card-owned'}`;
 
                         const badgeText = qty > 1 ? `+${qty - 1}` : '';
 
                         card.innerHTML = `
                     <div class="absolute top-1.5 right-1.5 text-xs font-black tracking-tighter z-10" style="color: var(--owned);" id="qty-${sticker.id}">${badgeText}</div>
-                    ${sticker.type === 'emblem' ? '<div class="absolute top-1.5 left-1.5 text-[7px] font-black uppercase px-1 py-0.5 rounded z-10" style="background:rgba(196,149,91,0.12);color:#c4955b;border:1px solid rgba(196,149,91,0.2);">Emblem</div>' : sticker.type === 'team' ? '<div class="absolute top-1.5 left-1.5 text-[7px] font-black uppercase px-1 py-0.5 rounded z-10" style="background:rgba(91,142,201,0.12);color:#5b8ec9;border:1px solid rgba(91,142,201,0.2);">Team</div>' : ''}
-                    <div class="flex flex-col items-center justify-center mb-8 px-1">
+                    ${sticker.type === 'emblem' ? `<div id="type-badge-${sticker.id}" class="absolute top-1.5 left-1.5 text-[7px] font-black uppercase px-1 py-0.5 rounded z-10" style="background:rgba(196,149,91,${isMissing ? '0.04' : '0.12'});color:${isMissing ? '#6b5a42' : '#c4955b'};border:1px solid rgba(196,149,91,${isMissing ? '0.08' : '0.2'});">Emblem</div>` : sticker.type === 'team' ? `<div id="type-badge-${sticker.id}" class="absolute top-1.5 left-1.5 text-[7px] font-black uppercase px-1 py-0.5 rounded z-10" style="background:rgba(91,142,201,${isMissing ? '0.04' : '0.12'});color:${isMissing ? '#3d5170' : '#5b8ec9'};border:1px solid rgba(91,142,201,${isMissing ? '0.08' : '0.2'});">Team</div>` : ''}
+                    ${sticker.type === 'team' ? '<div style="transform:rotate(-90deg);width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;">' : ''}
+                    <div class="flex flex-col items-center justify-center ${sticker.type !== 'team' ? 'mb-8' : ''} px-1">
                         <div class="sticker-id text-[11px] sm:text-sm font-black leading-none tracking-tight">${sticker.id}</div>
                         <div class="sticker-desc text-[9px] sm:text-[10px] leading-[1.1] text-center mt-1 w-full opacity-100 overflow-hidden line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${sticker.desc}</div>
                     </div>
-                    <div class="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 p-1.5 bg-black/50 backdrop-blur-md rounded-b-md">
+                    ${sticker.type === 'team' ? '</div>' : ''}
+                    <div class="absolute inset-x-px bottom-px flex items-center justify-center gap-3 p-1.5 rounded-b-md" style="background: rgba(0,0,0,0.55);">
                         <button onclick="updateSticker('${sticker.id}', -1)" id="btn-minus-${sticker.id}" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors hover:bg-white/20 text-white border border-white/10 ${isMissing ? 'opacity-50 pointer-events-none' : ''}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path></svg>
                         </button>
@@ -953,6 +968,20 @@
                 btnSort.innerHTML = `${iconHtml} <span class="hidden sm:inline">${text}</span>`;
 
                 reorderAlbum();
+            }
+
+            // Actualizar estilo visual del badge de tipo (emblem/team) al cambiar estado
+            function updateTypeBadge(badge, owned) {
+                const isEmblem = badge.textContent === 'Emblem';
+                if (isEmblem) {
+                    badge.style.background = `rgba(196,149,91,${owned ? '0.12' : '0.04'})`;
+                    badge.style.color = owned ? '#c4955b' : '#6b5a42';
+                    badge.style.borderColor = `rgba(196,149,91,${owned ? '0.2' : '0.08'})`;
+                } else {
+                    badge.style.background = `rgba(91,142,201,${owned ? '0.12' : '0.04'})`;
+                    badge.style.color = owned ? '#5b8ec9' : '#3d5170';
+                    badge.style.borderColor = `rgba(91,142,201,${owned ? '0.2' : '0.08'})`;
+                }
             }
 
             // Función auxiliar para saber el % de una sección antes de renderizarla
