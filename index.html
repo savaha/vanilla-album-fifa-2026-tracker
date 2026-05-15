@@ -467,7 +467,9 @@
 
                 // Reordenamiento ligero (solo entre modos sin grupos)
                 let displayStructure = [...albumStructure];
-                if (currentSortOrder === 'alpha') {
+                if (currentSortOrder === 'default') {
+                    displayStructure.sort((a, b) => a.order - b.order);
+                } else if (currentSortOrder === 'alpha') {
                     displayStructure.sort((a, b) => a.name.localeCompare(b.name));
                 } else if (currentSortOrder === 'percent-desc' || currentSortOrder === 'percent-asc') {
                     const percentMap = new Map();
@@ -502,7 +504,9 @@
                 // 1. Creamos la copia y ordenamos según la preferencia actual
                 let displayStructure = [...albumStructure];
                 // Aplicamos el ordenamiento correspondiente
-                if (currentSortOrder === 'alpha') {
+                if (currentSortOrder === 'default') {
+                    displayStructure.sort((a, b) => a.order - b.order);
+                } else if (currentSortOrder === 'alpha') {
                     displayStructure.sort((a, b) => a.name.localeCompare(b.name));
                 } else if (currentSortOrder === 'percent-desc' || currentSortOrder === 'percent-asc') {
                     // Precalcular porcentajes una sola vez por sección (evita recalcular en cada comparación del sort)
@@ -515,30 +519,24 @@
                     });
                 }
 
-                let teamCounter = 0;
-                const groupLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+                let lastGroup = null;
 
                 // 2. Iteramos sobre la estructura (ordenada o por defecto)
                 displayStructure.forEach((section, index) => {
-                    // Insertar Cabecera de Grupo si es el orden por defecto y no es FWC
-                    if (currentSortOrder === 'default' && section.id !== 'FWC') {
-                        if (teamCounter % 4 === 0) {
-                            const groupIdx = Math.floor(teamCounter / 4);
-                            if (groupIdx < groupLetters.length) {
-                                const groupHeader = document.createElement('div');
-                                groupHeader.dataset.groupHeader = '';
-                                groupHeader.className = 'mt-10 mb-4 sticky top-0 z-20 bg-[#030712] py-3 border-b border-white/5 flex items-center gap-4';
-                                groupHeader.innerHTML = `
-                                    <div class="h-8 w-8 rounded-lg bg-yellow-400 flex items-center justify-center text-gray-950 font-black text-sm">
-                                        ${groupLetters[groupIdx]}
-                                    </div>
-                                    <span class="text-sm font-black uppercase text-white tracking-tight">Grupo ${groupLetters[groupIdx]}</span>
-                                    <div class="flex-1 h-[1px] bg-white/5"></div>
-                                `;
-                                container.appendChild(groupHeader);
-                            }
-                        }
-                        teamCounter++;
+                    // Insertar Cabecera de Grupo si es el orden por defecto y la sección tiene grupo
+                    if (currentSortOrder === 'default' && section.group && section.group !== lastGroup) {
+                        lastGroup = section.group;
+                        const groupHeader = document.createElement('div');
+                        groupHeader.dataset.groupHeader = '';
+                        groupHeader.className = 'mt-10 mb-4 sticky top-0 z-20 bg-[#030712] py-3 border-b border-white/5 flex items-center gap-4';
+                        groupHeader.innerHTML = `
+                            <div class="h-8 w-8 rounded-lg bg-yellow-400 flex items-center justify-center text-gray-950 font-black text-sm">
+                                ${section.group}
+                            </div>
+                            <span class="text-sm font-black uppercase text-white tracking-tight">Grupo ${section.group}</span>
+                            <div class="flex-1 h-[1px] bg-white/5"></div>
+                        `;
+                        container.appendChild(groupHeader);
                     }
 
                     const details = document.createElement('details');
@@ -570,10 +568,12 @@
                     // Summary con porcentaje y duplicados por sección
                     const summary = document.createElement('summary');
                     summary.className = 'flex items-center justify-between gap-2 py-2 cursor-pointer list-none select-none border-b border-gray-800 pb-2 mb-3';
+                    const groupBadge = section.group ? `<span class="text-[9px] font-black px-1 py-0.5 rounded bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 flex-shrink-0">${section.group}</span>` : '';
+
                     summary.innerHTML = `
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
-                        <span class="text-[11px] sm:text-sm font-black text-white whitespace-nowrap">${section.id}</span><span class="text-[11px] sm:text-sm font-medium text-gray-500 opacity-60">·</span><span class="text-[11px] sm:text-sm font-bold uppercase tracking-tight text-gray-500 truncate opacity-80">${section.name}</span>
+                        ${groupBadge}<span class="text-[11px] sm:text-sm font-black text-white whitespace-nowrap">${section.id}</span><span class="text-[11px] sm:text-sm font-medium text-gray-500 opacity-60">·</span><span class="text-[11px] sm:text-sm font-bold uppercase tracking-tight text-gray-500 truncate opacity-80">${section.name}</span>
                     </div>
                     <span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black text-yellow-400 whitespace-nowrap">0%</span>
                     <div class="flex items-center gap-1.5 ml-1">
@@ -599,6 +599,7 @@
 
                         card.innerHTML = `
                     <div class="absolute top-1.5 right-1.5 text-xs font-black text-yellow-400 tracking-tighter z-10" id="qty-${sticker.id}">${badgeText}</div>
+                    ${sticker.type === 'emblem' ? '<div class="absolute top-1.5 left-1.5 text-[8px] font-black uppercase px-1 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 z-10">Emblem</div>' : sticker.type === 'team' ? '<div class="absolute top-1.5 left-1.5 text-[8px] font-black uppercase px-1 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 z-10">Team</div>' : ''}
                     <div class="flex flex-col items-center justify-center mb-8 px-1">
                         <div class="text-[11px] sm:text-sm font-black leading-none tracking-tight">${sticker.id}</div>
                         <div class="text-[9px] sm:text-[10px] leading-[1.1] text-center mt-1 w-full opacity-100 overflow-hidden line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${sticker.desc}</div>
