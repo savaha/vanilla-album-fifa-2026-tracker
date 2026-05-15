@@ -107,7 +107,7 @@
                 "type": "team"
             }
         ],
-        "group": null,
+        "group": "FWC",
         "order": 1
     },
     {

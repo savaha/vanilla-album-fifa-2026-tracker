@@ -25,7 +25,7 @@
                 localStorage.removeItem('albumCollection');
             }
             let currentFilter = 'all'; // all | missing | owned | duplicates
-            let allExpanded = true;
+            let allExpanded = false;
             let currentSortOrder = 'default'; // 'default' | 'alpha'
             let isBulkToggle = false; // Flag para evitar scroll masivo
 
@@ -293,6 +293,8 @@
                 } else {
                     completedList.innerHTML = '<p class="text-xs italic" style="color: var(--text-muted);">Aún ninguna sección completa.</p>';
                 }
+
+                updateGroupHeaders();
             }
 
             function setFilter(filterType) {
@@ -424,6 +426,7 @@
                 container.dataset.sortOrder = currentSortOrder;
                 applyFilter();
                 updateStats();
+                observeSections();
             }
 
             function renderAlbum() {
@@ -456,26 +459,36 @@
                     // Insertar Cabecera de Grupo si es el orden por defecto y la sección tiene grupo
                     if (currentSortOrder === 'default' && section.group && section.group !== lastGroup) {
                         lastGroup = section.group;
+                        const isFWC = section.id === 'FWC';
+                        const groupLabel = isFWC ? section.name : `Grupo ${section.group}`;
+                        const groupLetter = isFWC ? 'F' : section.group;
                         const groupHeader = document.createElement('div');
                         groupHeader.dataset.groupHeader = '';
-                        groupHeader.className = 'mt-6 mb-1 sticky top-0 z-20 py-2.5 border-b flex items-center gap-3';
+                        groupHeader.id = `group-header-${section.group}`;
+                        groupHeader.className = 'mt-3 mb-0.5 sticky top-0 z-20 py-2.5 border-b flex items-center gap-3';
                         groupHeader.style.background = 'var(--bg)';
                         groupHeader.style.borderColor = 'var(--border)';
                         groupHeader.innerHTML = `
                             <div class="h-8 w-8 rounded-lg flex items-center justify-center font-black text-sm" style="background: var(--accent); color: #14161a;">
-                                ${section.group}
+                                ${groupLetter}
                             </div>
-                            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-dim);">Grupo ${section.group}</span>
-                            <div class="flex-1 h-[1px] bg-white/5"></div>
+                            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-dim);">${groupLabel}</span>
+                            <span id="group-info-${section.group}" class="hidden ml-auto flex items-center gap-1.5">
+                                <span id="group-info-id-${section.group}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);"></span>
+                                <span id="group-info-pct-${section.group}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);"></span>
+                                <span id="group-info-dup-${section.group}" class="hidden dup-badge"></span>
+                                <span id="group-info-ctr-${section.group}" class="counter-badge"></span>
+                            </span>
                         `;
                         container.appendChild(groupHeader);
                     }
 
                     const details = document.createElement('details');
                     details.id = `section-${section.id}`;
+                    details.dataset.sectionId = section.id;
+                    if (section.group) details.dataset.sectionGroup = section.group;
                     details.className = 'group';
 
-                    // CORRECCIÓN: Ahora el estado de apertura depende de la variable global
                     details.open = allExpanded;
 
                     // Auto-scroll al abrir una sección (solo si es activado por el usuario, no en el primer render)
@@ -504,7 +517,7 @@
                     summary.innerHTML = buildSummary(section);
 
                     const grid = document.createElement('div');
-                    grid.className = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-10 gap-2 mb-4';
+                    grid.className = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-10 gap-2 mb-2';
 
                     section.stickers.forEach(sticker => {
                         const qty = collection[sticker.id] || 0;
@@ -525,6 +538,79 @@
                 // 3. Aplicamos filtros y estadísticas tras el renderizado
                 applyFilter();
                 updateStats();
+                observeSections();
+            }
+
+            // Actualiza el header sticky del grupo con los datos de la sección visible
+            let scrollTicking = false;
+            function onScroll() {
+                if (!scrollTicking) {
+                    requestAnimationFrame(() => {
+                        updateGroupHeaders();
+                        scrollTicking = false;
+                    });
+                    scrollTicking = true;
+                }
+            }
+
+            function updateGroupHeaders() {
+                const stickyTop = 60;
+                const groups = new Set();
+                document.querySelectorAll('#album-container details[data-section-group]').forEach(el => {
+                    groups.add(el.dataset.sectionGroup);
+                });
+
+                groups.forEach(group => {
+                    const sections = [...document.querySelectorAll(`#album-container details[data-section-group="${group}"]`)];
+                    let current = null;
+                    for (const sec of sections) {
+                        const summary = sec.querySelector('summary');
+                        if (!summary) continue;
+                        if (summary.getBoundingClientRect().top < stickyTop) {
+                            current = sec.dataset.sectionId;
+                        }
+                    }
+
+                    const infoWrap = document.getElementById(`group-info-${group}`);
+                    if (!infoWrap) return;
+
+                    const idEl = document.getElementById(`group-info-id-${group}`);
+                    const pctEl = document.getElementById(`group-info-pct-${group}`);
+                    const ctrEl = document.getElementById(`group-info-ctr-${group}`);
+
+                    if (current && idEl) {
+                        const counterEl = document.getElementById(`counter-val-${current}`);
+                        const percentEl = document.getElementById(`percent-val-${current}`);
+                        const dupEl = document.getElementById(`dup-val-${current}`);
+                        const dupGroupEl = document.getElementById(`group-info-dup-${group}`);
+                        idEl.textContent = current;
+                        if (pctEl) {
+                            pctEl.textContent = percentEl?.textContent || '0%';
+                            pctEl.style.color = percentEl?.style.color || 'var(--accent)';
+                        }
+                        if (ctrEl && counterEl) {
+                            ctrEl.textContent = counterEl.textContent || '0/0';
+                            const parts = counterEl.textContent?.split('/');
+                            const done = parts && parts.length === 2 && parts[0] === parts[1];
+                            ctrEl.classList.toggle('completed', done);
+                        }
+                        if (dupGroupEl && dupEl && !dupEl.classList.contains('hidden')) {
+                            dupGroupEl.textContent = dupEl.textContent;
+                            dupGroupEl.classList.remove('hidden');
+                        } else if (dupGroupEl) {
+                            dupGroupEl.classList.add('hidden');
+                        }
+                        infoWrap.classList.remove('hidden');
+                    } else {
+                        infoWrap.classList.add('hidden');
+                    }
+                });
+            }
+
+            function observeSections() {
+                window.removeEventListener('scroll', onScroll, { passive: true });
+                window.addEventListener('scroll', onScroll, { passive: true });
+                updateGroupHeaders(); // inicial
             }
 
             // --- FUNCIONES DE INTERFAZ ---
