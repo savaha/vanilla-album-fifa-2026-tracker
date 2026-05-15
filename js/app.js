@@ -94,8 +94,8 @@
             function buildDashboard() {
                 return `
                         <div class="rounded-2xl border p-3" style="background: var(--surface); border-color: var(--border);">
-                            <h3 class="text-[9px] font-semibold uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5" style="color: var(--whistle);">
-                                <span class="w-1 h-1 rounded-full animate-pulse" style="background: var(--whistle);"></span>
+                            <h3 class="text-[9px] font-semibold uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5" style="color: var(--alert);">
+                                <span class="w-1 h-1 rounded-full animate-pulse" style="background: var(--alert);"></span>
                                 Más faltantes
                             </h3>
                             <div id="top-missing-list" class="flex flex-col gap-1"></div>
@@ -273,7 +273,7 @@
                     topMissingList.innerHTML = topMissing.map(s => `
                         <div class="flex items-center justify-between text-xs" style="padding: 3px 0; border-bottom: 1px solid var(--border);">
                             <span class="truncate" style="color: var(--text-dim);"><span style="font-weight: 600; color: var(--text);">${s.id}</span> <span style="color: var(--text-muted);">${s.name}</span></span>
-                            <span class="text-[11px]" style="font-weight: 600; color: var(--whistle);">-${s.missing}</span>
+                            <span class="text-[11px]" style="font-weight: 600; color: var(--alert);">-${s.missing}</span>
                         </div>
                     `).join('');
                 } else {
@@ -286,7 +286,7 @@
                 const completedList = $('completed-list');
                 if (completed.length > 0) {
                     completedList.innerHTML = completed.map(s => `
-                        <span class="px-3 py-1 rounded-lg text-[11px] font-black" style="background: rgba(62,184,116,0.15); border: 1.5px solid rgba(62,184,116,0.4); color: var(--owned);">
+                        <span class="px-3 py-1 rounded-lg text-[11px] font-black" style="background: rgba(var(--owned-rgb), 0.15); border: 1.5px solid rgba(var(--owned-rgb), 0.4); color: var(--owned);">
                             ${s.id}
                         </span>
                     `).join('');
@@ -469,7 +469,7 @@
                         groupHeader.style.background = 'var(--bg)';
                         groupHeader.style.borderColor = 'var(--border)';
                         groupHeader.innerHTML = `
-                            <div class="h-8 w-8 rounded-lg flex items-center justify-center font-black text-sm" style="background: var(--accent); color: #14161a;">
+                            <div class="h-8 w-8 rounded-lg flex items-center justify-center font-black text-sm" style="background: var(--accent); color: var(--bg);">
                                 ${groupLetter}
                             </div>
                             <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-dim);">${groupLabel}</span>
