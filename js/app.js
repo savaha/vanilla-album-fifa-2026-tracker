@@ -58,7 +58,7 @@
                 const contentMb = sticker.type !== 'team' ? 'mb-8' : '';
 
                 return `
-                    <div class="absolute top-1.5 right-1.5 text-xs font-black tracking-tighter z-10" style="color: var(--owned);" id="qty-${sticker.id}">${badgeText}</div>
+                    ${badgeText ? `<div class="qty-badge" id="qty-${sticker.id}">${badgeText}</div>` : ''}
                     ${buildTypeBadge(sticker, isMissing)}
                     ${rotateOpen}
                     <div class="flex flex-col items-center justify-center ${contentMb} px-1">
@@ -126,7 +126,6 @@
 
                 // Actualización del DOM (Renderizado eficiente para evitar recargar todo)
                 const cardEl = document.getElementById(`card-${stickerId}`);
-                const qtyText = document.getElementById(`qty-${stickerId}`);
                 const btnMinus = document.getElementById(`btn-minus-${stickerId}`);
 
                 const owned = newQty > 0;
@@ -135,12 +134,24 @@
                     cardEl.classList.remove('card-missing');
                     cardEl.classList.add('card-owned');
                     btnMinus.classList.remove('opacity-50', 'pointer-events-none');
-                    qtyText.innerText = newQty > 1 ? `+${newQty - 1}` : '';
                 } else {
                     cardEl.classList.add('card-missing');
                     cardEl.classList.remove('card-owned');
                     btnMinus.classList.add('opacity-50', 'pointer-events-none');
-                    qtyText.innerText = '';
+                }
+
+                // Actualizar o crear badge de cantidad (+N)
+                let qtyBadge = document.getElementById(`qty-${stickerId}`);
+                if (newQty > 1) {
+                    if (!qtyBadge) {
+                        qtyBadge = document.createElement('div');
+                        qtyBadge.id = `qty-${stickerId}`;
+                        qtyBadge.className = 'qty-badge';
+                        cardEl.appendChild(qtyBadge);
+                    }
+                    qtyBadge.innerText = `+${newQty - 1}`;
+                } else if (qtyBadge) {
+                    qtyBadge.remove();
                 }
 
                 // Actualizar badge de tipo (emblem/team) si existe
