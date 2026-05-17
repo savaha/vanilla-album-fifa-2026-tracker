@@ -305,7 +305,7 @@
                     currentFilter = filterType;
                 }
 
-                // Actualizar estilos de los botones
+                // Actualizar estilos de los botones principales
                 const filters = ['missing', 'owned', 'duplicates'];
                 filters.forEach(f => {
                     const btn = $(`btn-filter-${f}`);
@@ -322,6 +322,20 @@
                         btn.style.borderColor = 'var(--btn-border)';
                         const counter = btn.querySelector('span');
                         if (counter) counter.style.color = 'var(--text)';
+                    }
+                });
+
+                // Actualizar botones de filtro en los headers sticky
+                document.querySelectorAll('.gh-filter-btn').forEach(btn => {
+                    const f = btn.dataset.filter;
+                    if (f === currentFilter) {
+                        btn.style.background = 'var(--owned-active-bg)';
+                        btn.style.color = 'var(--owned)';
+                        btn.style.borderColor = 'var(--owned-active-border)';
+                    } else {
+                        btn.style.background = 'var(--btn-bg)';
+                        btn.style.color = 'var(--btn-text)';
+                        btn.style.borderColor = 'var(--btn-border)';
                     }
                 });
 
@@ -382,6 +396,15 @@
                 }
 
                 // Liberamos el bloqueo después de que los eventos de toggle se procesen
+                setTimeout(() => { isBulkToggle = false; }, 200);
+            }
+
+            function toggleGroupSections(group) {
+                isBulkToggle = true;
+                const sections = document.querySelectorAll(`#album-container details[data-section-group="${group}"]`);
+                // Si todas están abiertas, cerramos; si no, abrimos
+                const allOpen = [...sections].every(s => s.open);
+                sections.forEach(s => { s.open = !allOpen; });
                 setTimeout(() => { isBulkToggle = false; }, 200);
             }
 
@@ -459,9 +482,7 @@
                     // Insertar Cabecera de Grupo si es el orden por defecto y la sección tiene grupo
                     if (currentSortOrder === 'default' && section.group && section.group !== lastGroup) {
                         lastGroup = section.group;
-                        const isFWC = section.id === 'FWC';
-                        const groupLabel = isFWC ? section.name : `Grupo ${section.group}`;
-                        const groupLetter = isFWC ? 'F' : section.group;
+                        const groupLetter = section.group;
                         const groupHeader = document.createElement('div');
                         groupHeader.dataset.groupHeader = '';
                         groupHeader.id = `group-header-${section.group}`;
@@ -472,9 +493,12 @@
                             <div class="h-8 w-8 rounded-lg flex items-center justify-center font-black text-sm" style="background: var(--accent); color: var(--bg);">
                                 ${groupLetter}
                             </div>
-                            <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-dim);">${groupLabel}</span>
-                            <span id="group-info-${section.group}" class="hidden ml-auto flex items-center gap-1.5">
-                                <span id="group-info-id-${section.group}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);"></span>
+                            <span id="group-section-id-${section.group}" class="hidden text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);"></span>
+                            <button onclick="setFilter('missing')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
+                            <button onclick="setFilter('owned')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
+                            <button onclick="setFilter('duplicates')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes">R</button>
+                            <button onclick="toggleGroupSections('${section.group}')" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90 ml-auto" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Expandir/Colapsar grupo">${I.chevron}</button>
+                            <span id="group-info-${section.group}" class="hidden flex items-center gap-1.5">
                                 <span id="group-info-pct-${section.group}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);"></span>
                                 <span id="group-info-dup-${section.group}" class="hidden dup-badge"></span>
                                 <span id="group-info-ctr-${section.group}" class="counter-badge"></span>
@@ -574,16 +598,19 @@
                     const infoWrap = document.getElementById(`group-info-${group}`);
                     if (!infoWrap) return;
 
-                    const idEl = document.getElementById(`group-info-id-${group}`);
+                    const idEl = document.getElementById(`group-section-id-${group}`);
                     const pctEl = document.getElementById(`group-info-pct-${group}`);
                     const ctrEl = document.getElementById(`group-info-ctr-${group}`);
 
-                    if (current && idEl) {
+                    if (current) {
                         const counterEl = document.getElementById(`counter-val-${current}`);
                         const percentEl = document.getElementById(`percent-val-${current}`);
                         const dupEl = document.getElementById(`dup-val-${current}`);
                         const dupGroupEl = document.getElementById(`group-info-dup-${group}`);
-                        idEl.textContent = current;
+                        if (idEl) {
+                            idEl.textContent = current;
+                            idEl.classList.remove('hidden');
+                        }
                         if (pctEl) {
                             pctEl.textContent = percentEl?.textContent || '0%';
                             pctEl.style.color = percentEl?.style.color || 'var(--accent)';
@@ -602,6 +629,7 @@
                         }
                         infoWrap.classList.remove('hidden');
                     } else {
+                        if (idEl) idEl.classList.add('hidden');
                         infoWrap.classList.add('hidden');
                     }
                 });
@@ -875,6 +903,7 @@
                     setFilter,
                     toggleSort,
                     toggleAllSections,
+                    toggleGroupSections,
                     toggleMenu,
                     exportData,
                     showImportModal,
