@@ -408,6 +408,27 @@
                 setTimeout(() => { isBulkToggle = false; }, 200);
             }
 
+            function buildSortHeader() {
+                const header = document.createElement('div');
+                header.id = 'sort-header';
+                header.className = 'hidden mb-0.5 sticky top-0 z-20 py-2.5 border-b flex items-center gap-3';
+                header.style.background = 'var(--bg)';
+                header.style.borderColor = 'var(--border)';
+                header.innerHTML = `
+                    <span id="sort-section-id" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);"></span>
+                    <button onclick="setFilter('missing')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
+                    <button onclick="setFilter('owned')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
+                    <button onclick="setFilter('duplicates')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes">R</button>
+                    <span id="sort-info" class="hidden ml-auto flex items-center gap-1.5">
+                        <span id="sort-info-pct" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);"></span>
+                        <span id="sort-info-dup" class="hidden dup-badge"></span>
+                        <span id="sort-info-ctr" class="counter-badge"></span>
+                    </span>
+                    <button onclick="toggleAllSections()" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Expandir/Colapsar todo">${I.chevron}</button>
+                `;
+                return header;
+            }
+
             // 4. GENERACIÓN DE LA INTERFAZ
 
             function reorderAlbum() {
@@ -425,19 +446,22 @@
                 if (currentSortOrder === 'default') {
                     displayStructure.sort((a, b) => a.order - b.order);
                 } else if (currentSortOrder === 'alpha') {
-                    displayStructure.sort((a, b) => a.name.localeCompare(b.name));
+                    displayStructure.sort((a, b) => a.id.localeCompare(b.id));
                 } else if (currentSortOrder === 'percent-desc' || currentSortOrder === 'percent-asc') {
                     const percentMap = new Map();
                     displayStructure.forEach(s => percentMap.set(s.id, getSectionPercentage(s)));
                     const multiplier = currentSortOrder === 'percent-desc' ? -1 : 1;
                     displayStructure.sort((a, b) => {
                         const diff = (percentMap.get(a.id) - percentMap.get(b.id)) * multiplier;
-                        return diff !== 0 ? diff : a.name.localeCompare(b.name);
+                        return diff !== 0 ? diff : a.id.localeCompare(b.id);
                     });
                 }
 
                 // Quitar group headers si los hay
                 container.querySelectorAll('[data-group-header]').forEach(h => h.remove());
+                // Quitar sort header si existe (se recrea abajo)
+                const oldSortHeader = document.getElementById('sort-header');
+                if (oldSortHeader) oldSortHeader.remove();
 
                 // Reordenar <details> existentes (appendChild mueve, no clona)
                 const sortedIds = displayStructure.map(s => s.id);
@@ -445,6 +469,11 @@
                     const el = document.getElementById(`section-${id}`);
                     if (el) container.appendChild(el);
                 });
+
+                // Reinsertar el sort header al inicio
+                if (currentSortOrder !== 'default') {
+                    container.insertBefore(buildSortHeader(), container.firstChild);
+                }
 
                 container.dataset.sortOrder = currentSortOrder;
                 applyFilter();
@@ -463,7 +492,7 @@
                 if (currentSortOrder === 'default') {
                     displayStructure.sort((a, b) => a.order - b.order);
                 } else if (currentSortOrder === 'alpha') {
-                    displayStructure.sort((a, b) => a.name.localeCompare(b.name));
+                    displayStructure.sort((a, b) => a.id.localeCompare(b.id));
                 } else if (currentSortOrder === 'percent-desc' || currentSortOrder === 'percent-asc') {
                     // Precalcular porcentajes una sola vez por sección (evita recalcular en cada comparación del sort)
                     const percentMap = new Map();
@@ -471,11 +500,16 @@
                     const multiplier = currentSortOrder === 'percent-desc' ? -1 : 1;
                     displayStructure.sort((a, b) => {
                         const diff = (percentMap.get(a.id) - percentMap.get(b.id)) * multiplier;
-                        return diff !== 0 ? diff : a.name.localeCompare(b.name);
+                        return diff !== 0 ? diff : a.id.localeCompare(b.id);
                     });
                 }
 
                 let lastGroup = null;
+
+                // En modos sin agrupación, insertamos un header sticky único
+                if (currentSortOrder !== 'default') {
+                    container.appendChild(buildSortHeader());
+                }
 
                 // 2. Iteramos sobre la estructura (ordenada o por defecto)
                 displayStructure.forEach((section, index) => {
@@ -497,12 +531,12 @@
                             <button onclick="setFilter('missing')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
                             <button onclick="setFilter('owned')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
                             <button onclick="setFilter('duplicates')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes">R</button>
-                            <button onclick="toggleGroupSections('${section.group}')" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90 ml-auto" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Expandir/Colapsar grupo">${I.chevron}</button>
-                            <span id="group-info-${section.group}" class="hidden flex items-center gap-1.5">
+                            <span id="group-info-${section.group}" class="hidden ml-auto flex items-center gap-1.5">
                                 <span id="group-info-pct-${section.group}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);"></span>
                                 <span id="group-info-dup-${section.group}" class="hidden dup-badge"></span>
                                 <span id="group-info-ctr-${section.group}" class="counter-badge"></span>
                             </span>
+                            <button onclick="toggleGroupSections('${section.group}')" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Expandir/Colapsar grupo">${I.chevron}</button>
                         `;
                         container.appendChild(groupHeader);
                     }
@@ -579,60 +613,115 @@
 
             function updateGroupHeaders() {
                 const stickyTop = 60;
-                const groups = new Set();
-                document.querySelectorAll('#album-container details[data-section-group]').forEach(el => {
-                    groups.add(el.dataset.sectionGroup);
-                });
 
-                groups.forEach(group => {
-                    const sections = [...document.querySelectorAll(`#album-container details[data-section-group="${group}"]`)];
-                    let current = null;
-                    for (const sec of sections) {
-                        const summary = sec.querySelector('summary');
-                        if (!summary) continue;
-                        if (summary.getBoundingClientRect().top < stickyTop) {
-                            current = sec.dataset.sectionId;
+                // Modo con grupos (default)
+                if (currentSortOrder === 'default') {
+                    const groups = new Set();
+                    document.querySelectorAll('#album-container details[data-section-group]').forEach(el => {
+                        groups.add(el.dataset.sectionGroup);
+                    });
+
+                    groups.forEach(group => {
+                        const sections = [...document.querySelectorAll(`#album-container details[data-section-group="${group}"]`)];
+                        let current = null;
+                        for (const sec of sections) {
+                            if (sec.style.display === 'none') continue;
+                            const summary = sec.querySelector('summary');
+                            if (!summary) continue;
+                            if (summary.getBoundingClientRect().top < stickyTop) {
+                                current = sec.dataset.sectionId;
+                            }
                         }
+
+                        const infoWrap = document.getElementById(`group-info-${group}`);
+                        if (!infoWrap) return;
+
+                        const idEl = document.getElementById(`group-section-id-${group}`);
+                        const pctEl = document.getElementById(`group-info-pct-${group}`);
+                        const ctrEl = document.getElementById(`group-info-ctr-${group}`);
+
+                        if (current) {
+                            const counterEl = document.getElementById(`counter-val-${current}`);
+                            const percentEl = document.getElementById(`percent-val-${current}`);
+                            const dupEl = document.getElementById(`dup-val-${current}`);
+                            const dupGroupEl = document.getElementById(`group-info-dup-${group}`);
+                            if (idEl) {
+                                idEl.textContent = current;
+                                idEl.classList.remove('hidden');
+                            }
+                            if (pctEl) {
+                                pctEl.textContent = percentEl?.textContent || '0%';
+                                pctEl.style.color = percentEl?.style.color || 'var(--accent)';
+                            }
+                            if (ctrEl && counterEl) {
+                                ctrEl.textContent = counterEl.textContent || '0/0';
+                                const parts = counterEl.textContent?.split('/');
+                                const done = parts && parts.length === 2 && parts[0] === parts[1];
+                                ctrEl.classList.toggle('completed', done);
+                            }
+                            if (dupGroupEl && dupEl && !dupEl.classList.contains('hidden')) {
+                                dupGroupEl.textContent = dupEl.textContent;
+                                dupGroupEl.classList.remove('hidden');
+                            } else if (dupGroupEl) {
+                                dupGroupEl.classList.add('hidden');
+                            }
+                            infoWrap.classList.remove('hidden');
+                        } else {
+                            if (idEl) idEl.classList.add('hidden');
+                            infoWrap.classList.add('hidden');
+                        }
+                    });
+                    return;
+                }
+
+                // Modo sin grupos (alpha, percent): header único
+                const sortHeader = document.getElementById('sort-header');
+                if (!sortHeader) return;
+
+                const allSections = [...document.querySelectorAll('#album-container details')];
+                let current = null;
+                for (const sec of allSections) {
+                    if (sec.style.display === 'none') continue;
+                    const summary = sec.querySelector('summary');
+                    if (!summary) continue;
+                    if (summary.getBoundingClientRect().top < stickyTop) {
+                        current = sec.dataset.sectionId;
                     }
+                }
 
-                    const infoWrap = document.getElementById(`group-info-${group}`);
-                    if (!infoWrap) return;
+                const idEl = document.getElementById('sort-section-id');
+                const infoWrap = document.getElementById('sort-info');
+                const pctEl = document.getElementById('sort-info-pct');
+                const ctrEl = document.getElementById('sort-info-ctr');
+                const dupEl = document.getElementById('sort-info-dup');
 
-                    const idEl = document.getElementById(`group-section-id-${group}`);
-                    const pctEl = document.getElementById(`group-info-pct-${group}`);
-                    const ctrEl = document.getElementById(`group-info-ctr-${group}`);
-
-                    if (current) {
-                        const counterEl = document.getElementById(`counter-val-${current}`);
-                        const percentEl = document.getElementById(`percent-val-${current}`);
-                        const dupEl = document.getElementById(`dup-val-${current}`);
-                        const dupGroupEl = document.getElementById(`group-info-dup-${group}`);
-                        if (idEl) {
-                            idEl.textContent = current;
-                            idEl.classList.remove('hidden');
-                        }
-                        if (pctEl) {
-                            pctEl.textContent = percentEl?.textContent || '0%';
-                            pctEl.style.color = percentEl?.style.color || 'var(--accent)';
-                        }
-                        if (ctrEl && counterEl) {
-                            ctrEl.textContent = counterEl.textContent || '0/0';
-                            const parts = counterEl.textContent?.split('/');
-                            const done = parts && parts.length === 2 && parts[0] === parts[1];
-                            ctrEl.classList.toggle('completed', done);
-                        }
-                        if (dupGroupEl && dupEl && !dupEl.classList.contains('hidden')) {
-                            dupGroupEl.textContent = dupEl.textContent;
-                            dupGroupEl.classList.remove('hidden');
-                        } else if (dupGroupEl) {
-                            dupGroupEl.classList.add('hidden');
-                        }
-                        infoWrap.classList.remove('hidden');
-                    } else {
-                        if (idEl) idEl.classList.add('hidden');
-                        infoWrap.classList.add('hidden');
+                if (current) {
+                    sortHeader.classList.remove('hidden');
+                    const counterEl = document.getElementById(`counter-val-${current}`);
+                    const percentEl = document.getElementById(`percent-val-${current}`);
+                    const dupSectionEl = document.getElementById(`dup-val-${current}`);
+                    if (idEl) idEl.textContent = current;
+                    if (pctEl) {
+                        pctEl.textContent = percentEl?.textContent || '0%';
+                        pctEl.style.color = percentEl?.style.color || 'var(--accent)';
                     }
-                });
+                    if (ctrEl && counterEl) {
+                        ctrEl.textContent = counterEl.textContent || '0/0';
+                        const parts = counterEl.textContent?.split('/');
+                        const done = parts && parts.length === 2 && parts[0] === parts[1];
+                        ctrEl.classList.toggle('completed', done);
+                    }
+                    if (dupEl && dupSectionEl && !dupSectionEl.classList.contains('hidden')) {
+                        dupEl.textContent = dupSectionEl.textContent;
+                        dupEl.classList.remove('hidden');
+                    } else if (dupEl) {
+                        dupEl.classList.add('hidden');
+                    }
+                    if (infoWrap) infoWrap.classList.remove('hidden');
+                } else {
+                    sortHeader.classList.add('hidden');
+                    if (infoWrap) infoWrap.classList.add('hidden');
+                }
             }
 
             function observeSections() {
