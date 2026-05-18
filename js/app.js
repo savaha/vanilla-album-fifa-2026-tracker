@@ -87,7 +87,7 @@ const App = (() => {
         return `
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
-                        ${groupBadge}<span class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);">${section.id}</span><span class="text-[11px] sm:text-sm font-medium opacity-40" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate" style="color: var(--text-dim);">${section.name}</span>
+                        ${groupBadge}<span class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium whitespace-nowrap ml-0.5" style="color: var(--text-dim);">p.${section.page}</span><span class="text-[11px] sm:text-sm font-medium opacity-40" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate" style="color: var(--text-dim);">${section.name}</span>
                     </div>
                     <span class="whitespace-nowrap"><span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden text-[11px] sm:text-sm font-bold" style="color: rgba(var(--accent-rgb), 0.65);"></span></span>
                     <div class="flex items-center gap-1.5 ml-1">
