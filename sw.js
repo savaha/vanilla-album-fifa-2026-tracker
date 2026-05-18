@@ -1,4 +1,4 @@
-const VERSION = 9;
+const VERSION = 10;
 const CACHE_NAME = `fullalbum-v${VERSION}`;
 const ASSETS = [
   './',
