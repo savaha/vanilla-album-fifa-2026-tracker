@@ -9,6 +9,7 @@ const App = (() => {
         expand: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>',
         import: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
         export: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>',
+        search: '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
     };
 
     // ── CACHE DOM ──
@@ -88,9 +89,9 @@ const App = (() => {
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
                         ${groupBadge}<span class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);">${section.id}</span><span class="text-[11px] sm:text-sm font-medium opacity-40" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate" style="color: var(--text-dim);">${section.name}</span>
                     </div>
-                    <span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);">0%</span>
+                    <span class="whitespace-nowrap"><span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden text-[11px] sm:text-sm font-bold" style="color: rgba(var(--accent-rgb), 0.65);"></span></span>
                     <div class="flex items-center gap-1.5 ml-1">
-                        <span id="dup-val-${section.id}" class="hidden dup-badge">0 repes</span><span id="counter-val-${section.id}" class="counter-badge">0/0</span>
+                        <span id="dup-val-${section.id}" class="hidden dup-badge">0 rep</span>
                     </div>
                 </div>
                 <span class="text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0">${I.chevron}</span>`;
@@ -196,19 +197,7 @@ const App = (() => {
                 }
             });
 
-            // 1. Actualizar el contador visual (ej. 5/20)
-            const sectionCounter = document.getElementById(`counter-val-${section.id}`);
-            if (sectionCounter) {
-                sectionCounter.innerText = `${sectionFound}/${sectionTotal}`;
-
-                if (sectionFound === sectionTotal) {
-                    sectionCounter.classList.add('completed');
-                } else {
-                    sectionCounter.classList.remove('completed');
-                }
-            }
-
-            // 2. Actualizar Porcentaje de la sección
+            // 1. Actualizar Porcentaje de la sección
             const sectionPercent = sectionTotal === 0 ? 0 : Math.round((sectionFound / sectionTotal) * 100);
             const percentEl = document.getElementById(`percent-val-${section.id}`);
             if (percentEl) {
@@ -216,11 +205,23 @@ const App = (() => {
                 percentEl.style.color = sectionPercent === 100 ? 'var(--owned)' : 'var(--accent)';
             }
 
+            // 2. Actualizar contador de faltantes por sección
+            const sectionMissing = sectionTotal - sectionFound;
+            const missingEl = document.getElementById(`missing-val-${section.id}`);
+            if (missingEl) {
+                if (sectionMissing > 0) {
+                    missingEl.innerText = `(-${sectionMissing})`;
+                    missingEl.classList.remove('hidden');
+                } else {
+                    missingEl.classList.add('hidden');
+                }
+            }
+
             // 3. Acumular datos para el dashboard
             sectionData.push({
                 name: section.name,
                 id: section.id,
-                missing: sectionTotal - sectionFound,
+                missing: sectionMissing,
                 total: sectionTotal
             });
 
@@ -228,7 +229,7 @@ const App = (() => {
             const dupEl = document.getElementById(`dup-val-${section.id}`);
             if (dupEl) {
                 if (sectionDuplicates > 0) {
-                    dupEl.innerText = `${sectionDuplicates} repes`;
+                    dupEl.innerText = `${sectionDuplicates} rep`;
                     dupEl.classList.remove('hidden');
                 } else {
                     dupEl.classList.add('hidden');
@@ -422,13 +423,13 @@ const App = (() => {
         header.style.borderColor = 'var(--border)';
         header.innerHTML = `
                     <span id="sort-section-id" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);"></span>
+                    <button onclick="toggleJumpInput()" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
                     <button onclick="setFilter('missing')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
                     <button onclick="setFilter('owned')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
                     <button onclick="setFilter('duplicates')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes">R</button>
                     <span id="sort-info" class="hidden ml-auto flex items-center gap-1.5">
-                        <span id="sort-info-pct" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);"></span>
+                        <span class="whitespace-nowrap"><span id="sort-info-pct" class="text-[11px] sm:text-sm font-black" style="color: var(--accent);"></span><span id="sort-info-missing" class="hidden text-[11px] sm:text-sm font-bold" style="color: rgba(var(--accent-rgb), 0.65);"></span></span>
                         <span id="sort-info-dup" class="hidden dup-badge"></span>
-                        <span id="sort-info-ctr" class="counter-badge"></span>
                     </span>
                     <button onclick="toggleAllSections()" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Expandir/Colapsar todo">${I.chevron}</button>
                 `;
@@ -534,13 +535,13 @@ const App = (() => {
                                 ${groupLetter}
                             </div>
                             <span id="group-section-id-${section.group}" class="hidden text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);"></span>
+                            <button onclick="toggleJumpInput()" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
                             <button onclick="setFilter('missing')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
                             <button onclick="setFilter('owned')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
                             <button onclick="setFilter('duplicates')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes">R</button>
                             <span id="group-info-${section.group}" class="hidden ml-auto flex items-center gap-1.5">
-                                <span id="group-info-pct-${section.group}" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--accent);"></span>
+                                <span class="whitespace-nowrap"><span id="group-info-pct-${section.group}" class="text-[11px] sm:text-sm font-black" style="color: var(--accent);"></span><span id="group-info-missing-${section.group}" class="hidden text-[11px] sm:text-sm font-bold" style="color: rgba(var(--accent-rgb), 0.65);"></span></span>
                                 <span id="group-info-dup-${section.group}" class="hidden dup-badge"></span>
-                                <span id="group-info-ctr-${section.group}" class="counter-badge"></span>
                             </span>
                             <button onclick="toggleGroupSections('${section.group}')" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Expandir/Colapsar grupo">${I.chevron}</button>
                         `;
@@ -644,10 +645,9 @@ const App = (() => {
 
                 const idEl = document.getElementById(`group-section-id-${group}`);
                 const pctEl = document.getElementById(`group-info-pct-${group}`);
-                const ctrEl = document.getElementById(`group-info-ctr-${group}`);
 
                 if (current) {
-                    const counterEl = document.getElementById(`counter-val-${current}`);
+                    const missingEl = document.getElementById(`missing-val-${current}`);
                     const percentEl = document.getElementById(`percent-val-${current}`);
                     const dupEl = document.getElementById(`dup-val-${current}`);
                     const dupGroupEl = document.getElementById(`group-info-dup-${group}`);
@@ -659,11 +659,14 @@ const App = (() => {
                         pctEl.textContent = percentEl?.textContent || '0%';
                         pctEl.style.color = percentEl?.style.color || 'var(--accent)';
                     }
-                    if (ctrEl && counterEl) {
-                        ctrEl.textContent = counterEl.textContent || '0/0';
-                        const parts = counterEl.textContent?.split('/');
-                        const done = parts && parts.length === 2 && parts[0] === parts[1];
-                        ctrEl.classList.toggle('completed', done);
+                    const missingGroupEl = document.getElementById(`group-info-missing-${group}`);
+                    if (missingGroupEl && missingEl) {
+                        if (!missingEl.classList.contains('hidden')) {
+                            missingGroupEl.textContent = missingEl.textContent;
+                            missingGroupEl.classList.remove('hidden');
+                        } else {
+                            missingGroupEl.classList.add('hidden');
+                        }
                     }
                     if (dupGroupEl && dupEl && !dupEl.classList.contains('hidden')) {
                         dupGroupEl.textContent = dupEl.textContent;
@@ -698,12 +701,12 @@ const App = (() => {
         const idEl = document.getElementById('sort-section-id');
         const infoWrap = document.getElementById('sort-info');
         const pctEl = document.getElementById('sort-info-pct');
-        const ctrEl = document.getElementById('sort-info-ctr');
+        const missingInfoEl = document.getElementById('sort-info-missing');
         const dupEl = document.getElementById('sort-info-dup');
 
         if (current) {
             sortHeader.classList.remove('hidden');
-            const counterEl = document.getElementById(`counter-val-${current}`);
+            const missingEl = document.getElementById(`missing-val-${current}`);
             const percentEl = document.getElementById(`percent-val-${current}`);
             const dupSectionEl = document.getElementById(`dup-val-${current}`);
             if (idEl) idEl.textContent = current;
@@ -711,11 +714,13 @@ const App = (() => {
                 pctEl.textContent = percentEl?.textContent || '0%';
                 pctEl.style.color = percentEl?.style.color || 'var(--accent)';
             }
-            if (ctrEl && counterEl) {
-                ctrEl.textContent = counterEl.textContent || '0/0';
-                const parts = counterEl.textContent?.split('/');
-                const done = parts && parts.length === 2 && parts[0] === parts[1];
-                ctrEl.classList.toggle('completed', done);
+            if (missingInfoEl && missingEl) {
+                if (!missingEl.classList.contains('hidden')) {
+                    missingInfoEl.textContent = missingEl.textContent;
+                    missingInfoEl.classList.remove('hidden');
+                } else {
+                    missingInfoEl.classList.add('hidden');
+                }
             }
             if (dupEl && dupSectionEl && !dupSectionEl.classList.contains('hidden')) {
                 dupEl.textContent = dupSectionEl.textContent;
@@ -809,6 +814,98 @@ const App = (() => {
             closeImportModal();
         }
     });
+
+    // Búsqueda rápida de secciones por teclado y botón "Ir a..."
+    let searchString = '';
+    let searchTimeout = null;
+    let searchToast = null;
+
+    function showSearchToast(text) {
+        if (!searchToast) {
+            searchToast = document.createElement('div');
+            searchToast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[300] px-4 py-2 rounded-full text-sm font-black uppercase tracking-wider shadow-lg transition-all duration-150 pointer-events-none';
+            searchToast.style.background = 'var(--accent)';
+            searchToast.style.color = 'var(--bg)';
+            document.body.appendChild(searchToast);
+        }
+        searchToast.textContent = text;
+        searchToast.style.opacity = '1';
+        searchToast.style.transform = 'translate(-50%, 0)';
+        clearTimeout(searchToast._hide);
+        searchToast._hide = setTimeout(() => {
+            searchToast.style.opacity = '0';
+        }, 1200);
+    }
+
+    function jumpToSection(query) {
+        if (!query) return false;
+        const match = albumStructure.find(s => s.id.startsWith(query.toUpperCase()));
+        if (match) {
+            const el = document.getElementById(`section-${match.id}`);
+            if (el) {
+                el.open = true;
+                const offset = 70;
+                const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+                window.scrollTo({ top, behavior: 'smooth' });
+                showSearchToast(query.toUpperCase() + ' → ' + match.id);
+                return true;
+            }
+        }
+        showSearchToast('?');
+        return false;
+    }
+
+    document.addEventListener('keydown', (e) => {
+        // No interceptar si hay modal abierto o el foco está en un input
+        if (!$('import-modal').classList.contains('hidden')) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        // Solo letras y números
+        if (e.key.length === 1 && /[A-Za-z0-9]/.test(e.key)) {
+            searchString += e.key.toUpperCase();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => { searchString = ''; }, 1500);
+
+            if (!jumpToSection(searchString)) {
+                searchString = searchString.slice(0, -1);
+                if (searchString) jumpToSection(searchString);
+            }
+        }
+    });
+
+    // Input flotante único para búsqueda rápida
+    let jumpFloating = null;
+
+    function toggleJumpInput() {
+        if (!jumpFloating) {
+            jumpFloating = document.createElement('div');
+            jumpFloating.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-1.5 px-2 py-1.5 rounded-full border shadow-lg';
+            jumpFloating.style.background = 'var(--surface-alt)';
+            jumpFloating.style.borderColor = 'var(--accent)';
+            jumpFloating.innerHTML = `
+                <span style="color: var(--accent);">${I.search}</span>
+                <input type="text" class="jump-float-input w-16 sm:w-20 px-1 text-[10px] font-bold uppercase border-none focus:outline-none" style="background:transparent; color:var(--text);" placeholder="ID..." autocomplete="off" autocorrect="off" spellcheck="false">
+                <button onclick="toggleJumpInput()" class="text-[9px] font-bold uppercase" style="color: var(--text-dim);">✕</button>
+            `;
+            document.body.appendChild(jumpFloating);
+
+            const input = jumpFloating.querySelector('.jump-float-input');
+            let idleTimer = setTimeout(() => toggleJumpInput(), 2000);
+            const resetTimer = () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => toggleJumpInput(), 2000); };
+            input.addEventListener('input', function() {
+                resetTimer();
+                if (this.value) jumpToSection(this.value);
+            });
+            input.addEventListener('keydown', function(e) {
+                resetTimer();
+                if (e.key === 'Escape') { clearTimeout(idleTimer); toggleJumpInput(); }
+            });
+            // Auto-focus
+            setTimeout(() => input.focus(), 100);
+        } else {
+            jumpFloating.remove();
+            jumpFloating = null;
+        }
+    }
 
     function processImport() {
         const input = $('import-textarea').value;
@@ -1013,6 +1110,7 @@ const App = (() => {
         toggleSort,
         toggleAllSections,
         toggleGroupSections,
+        toggleJumpInput,
         toggleMenu,
         exportData,
         showImportModal,
