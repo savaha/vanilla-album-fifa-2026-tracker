@@ -888,20 +888,20 @@ const App = (() => {
                 const fullId = fid(section.id, sticker.id);
                 const qty = collection[fullId] || 0;
                 if (qty === 0) {
-                    secMissing.push(fullId);
+                    secMissing.push(sticker.id);
                 } else if (qty > 1) {
-                    secDups.push(`${fullId}(+${qty - 1})`);
+                    secDups.push(sticker.id);
                 }
             });
 
             // Si la sección tiene faltantes, unimos sus IDs y los guardamos como un grupo
             if (secMissing.length > 0) {
-                missingGroups.push(secMissing.join(', '));
+                missingGroups.push(`${section.id}: ${secMissing.join(', ')}`);
             }
 
             // Si la sección tiene repetidas, unimos sus IDs y los guardamos como un grupo
             if (secDups.length > 0) {
-                duplicatesGroups.push(secDups.join(', '));
+                duplicatesGroups.push(`${section.id}: ${secDups.join(', ')}`);
             }
         });
 
