@@ -29,6 +29,11 @@ const App = (() => {
     let allExpanded = false;
     let currentSortOrder = 'default'; // 'default' | 'alpha'
     let isBulkToggle = false; // Flag para evitar scroll masivo
+    let changeLog = [];
+    try {
+        const saved = localStorage.getItem('albumChangeLog');
+        if (saved) changeLog = JSON.parse(saved);
+    } catch (e) { /* ignorar */ }
 
     // Helper: ID completo sección-sticker (ej. FWC-1, MEX-13, PANINI-00)
     const fid = (secId, stId) => secId + '-' + stId;
@@ -41,6 +46,20 @@ const App = (() => {
             console.error('Error al guardar: almacenamiento lleno o no disponible.', e);
             alert('No se pudo guardar tu progreso. El almacenamiento del navegador está lleno. Intenta liberar espacio.');
         }
+    }
+
+    function pushChangeLog(entry) {
+        changeLog.unshift(entry);
+        if (changeLog.length > 10) changeLog.pop();
+        try { localStorage.setItem('albumChangeLog', JSON.stringify(changeLog)); } catch (e) { /* ignorar */ }
+    }
+
+    function relativeTime(ts) {
+        const diff = Math.floor((Date.now() - ts) / 1000);
+        if (diff < 60) return 'ahora';
+        if (diff < 3600) return 'hace ' + Math.floor(diff / 60) + ' min';
+        if (diff < 86400) return 'hace ' + Math.floor(diff / 3600) + ' h';
+        return 'hace ' + Math.floor(diff / 86400) + ' d';
     }
 
     // 3. TEMPLATES
@@ -87,7 +106,7 @@ const App = (() => {
         return `
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
-                        ${groupBadge}<span class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium whitespace-nowrap ml-0.5" style="color: var(--text-dim);">p.${section.page}</span><span class="text-[11px] sm:text-sm font-medium opacity-40" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate" style="color: var(--text-dim);">${section.name}</span>
+                        ${groupBadge}<span class="whitespace-nowrap"><span class="text-[11px] sm:text-sm font-black" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium ml-1" style="color: var(--text-dim);">p.${section.page}</span></span><span class="text-[11px] sm:text-sm font-medium opacity-40" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate" style="color: var(--text-dim);">${section.name}</span>
                     </div>
                     <span class="whitespace-nowrap"><span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden text-[11px] sm:text-sm font-bold" style="color: rgba(var(--accent-rgb), 0.65);"></span></span>
                     <div class="flex items-center gap-1.5 ml-1">
@@ -129,6 +148,19 @@ const App = (() => {
 
         collection[stickerId] = newQty;
         saveCollection();
+
+        // Registrar en bitácora
+        const dashIdx = stickerId.lastIndexOf('-');
+        const secId = dashIdx >= 0 ? stickerId.substring(0, dashIdx) : '';
+        const stNum = dashIdx >= 0 ? stickerId.substring(dashIdx + 1) : stickerId;
+        const section = albumStructure.find(s => s.id === secId);
+        const sticker = section?.stickers?.find(st => st.id === stNum);
+        pushChangeLog({
+            fullId: stickerId,
+            desc: sticker?.desc || '',
+            delta: delta,
+            ts: Date.now()
+        });
 
         // Actualización del DOM (Renderizado eficiente para evitar recargar todo)
         const cardEl = document.getElementById(`card-${stickerId}`);
@@ -422,7 +454,7 @@ const App = (() => {
         header.style.background = 'var(--bg)';
         header.style.borderColor = 'var(--border)';
         header.innerHTML = `
-                    <span id="sort-section-id" class="text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);"></span>
+                    <span class="whitespace-nowrap"><span id="sort-section-id" class="text-[11px] sm:text-sm font-black" style="color: var(--text);"></span><span id="sort-page-id" class="hidden text-[9px] font-medium ml-1" style="color: var(--text-dim);"></span></span>
                     <button onclick="toggleJumpInput()" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
                     <button onclick="setFilter('missing')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
                     <button onclick="setFilter('owned')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
@@ -534,7 +566,7 @@ const App = (() => {
                             <div class="h-8 w-8 rounded-lg flex items-center justify-center font-black text-sm" style="background: var(--accent); color: var(--bg);">
                                 ${groupLetter}
                             </div>
-                            <span id="group-section-id-${section.group}" class="hidden text-[11px] sm:text-sm font-black whitespace-nowrap" style="color: var(--text);"></span>
+                            <span class="whitespace-nowrap"><span id="group-section-id-${section.group}" class="hidden text-[11px] sm:text-sm font-black" style="color: var(--text);"></span><span id="group-page-id-${section.group}" class="hidden text-[9px] font-medium ml-1" style="color: var(--text-dim);"></span></span>
                             <button onclick="toggleJumpInput()" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
                             <button onclick="setFilter('missing')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
                             <button onclick="setFilter('owned')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
@@ -655,6 +687,16 @@ const App = (() => {
                         idEl.textContent = current;
                         idEl.classList.remove('hidden');
                     }
+                    const pageIdEl = document.getElementById(`group-page-id-${group}`);
+                    if (pageIdEl) {
+                        const sec = albumStructure.find(s => s.id === current);
+                        if (sec?.page != null) {
+                            pageIdEl.textContent = 'p.' + sec.page;
+                            pageIdEl.classList.remove('hidden');
+                        } else {
+                            pageIdEl.classList.add('hidden');
+                        }
+                    }
                     if (pctEl) {
                         pctEl.textContent = percentEl?.textContent || '0%';
                         pctEl.style.color = percentEl?.style.color || 'var(--accent)';
@@ -677,6 +719,8 @@ const App = (() => {
                     infoWrap.classList.remove('hidden');
                 } else {
                     if (idEl) idEl.classList.add('hidden');
+                    const pageIdEl2 = document.getElementById(`group-page-id-${group}`);
+                    if (pageIdEl2) pageIdEl2.classList.add('hidden');
                     infoWrap.classList.add('hidden');
                 }
             });
@@ -710,6 +754,16 @@ const App = (() => {
             const percentEl = document.getElementById(`percent-val-${current}`);
             const dupSectionEl = document.getElementById(`dup-val-${current}`);
             if (idEl) idEl.textContent = current;
+            const pageIdEl = document.getElementById('sort-page-id');
+            if (pageIdEl) {
+                const sec = albumStructure.find(s => s.id === current);
+                if (sec?.page != null) {
+                    pageIdEl.textContent = 'p.' + sec.page;
+                    pageIdEl.classList.remove('hidden');
+                } else {
+                    pageIdEl.classList.add('hidden');
+                }
+            }
             if (pctEl) {
                 pctEl.textContent = percentEl?.textContent || '0%';
                 pctEl.style.color = percentEl?.style.color || 'var(--accent)';
@@ -732,6 +786,8 @@ const App = (() => {
         } else {
             sortHeader.classList.add('hidden');
             if (infoWrap) infoWrap.classList.add('hidden');
+            const pageIdEl2 = document.getElementById('sort-page-id');
+            if (pageIdEl2) pageIdEl2.classList.add('hidden');
         }
     }
 
@@ -748,12 +804,17 @@ const App = (() => {
         $('dropdown-menu').classList.toggle('hidden');
     }
 
-    // Cerrar menú al hacer clic fuera
+    // Cerrar menú y bitácora al hacer clic fuera
     document.addEventListener('click', (e) => {
         const menu = $('dropdown-menu');
         const btn = $('btn-menu');
         if (!menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== btn) {
             menu.classList.add('hidden');
+        }
+        const logPanel = document.getElementById('changelog-panel');
+        const logBtn = document.getElementById('btn-changelog');
+        if (logPanel && !logPanel.classList.contains('hidden') && !logPanel.contains(e.target) && e.target !== logBtn) {
+            logPanel.classList.add('hidden');
         }
     });
 
@@ -904,6 +965,40 @@ const App = (() => {
         } else {
             jumpFloating.remove();
             jumpFloating = null;
+        }
+    }
+
+    function renderChangeLog() {
+        const list = document.getElementById('changelog-list');
+        if (!list) return;
+        if (changeLog.length === 0) {
+            list.innerHTML = '<div class="text-[9px] text-center py-3" style="color: var(--text-muted);">Sin actividad</div>';
+            return;
+        }
+        list.innerHTML = changeLog.map(e => {
+            const sign = e.delta > 0 ? '+' : '';
+            const color = e.delta > 0 ? 'var(--owned)' : 'var(--alert)';
+            return `<div class="flex items-center gap-1.5 text-[9px] py-0.5">
+                <span class="font-black whitespace-nowrap" style="color: ${color}; min-width: 1.5rem;">${sign}${e.delta}</span>
+                <span class="font-bold whitespace-nowrap" style="color: var(--text);">${e.fullId}</span>
+                <span class="truncate" style="color: var(--text-dim);">${e.desc}</span>
+                <span class="font-medium whitespace-nowrap ml-auto" style="color: var(--text-muted);">${relativeTime(e.ts)}</span>
+            </div>`;
+        }).join('');
+    }
+
+    function toggleChangeLog(e) {
+        if (e) e.stopPropagation();
+        const panel = document.getElementById('changelog-panel');
+        if (!panel) return;
+        const isHidden = panel.classList.contains('hidden');
+        // Cerrar otros dropdowns
+        $('dropdown-menu').classList.add('hidden');
+        if (isHidden) {
+            renderChangeLog();
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
         }
     }
 
@@ -1111,6 +1206,7 @@ const App = (() => {
         toggleAllSections,
         toggleGroupSections,
         toggleJumpInput,
+        toggleChangeLog,
         toggleMenu,
         exportData,
         showImportModal,

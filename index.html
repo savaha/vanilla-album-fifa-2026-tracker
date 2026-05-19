@@ -291,6 +291,20 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 </button>
 
+                <div class="relative">
+                    <button onclick="toggleChangeLog(event)" id="btn-changelog"
+                        class="h-9 w-9 flex items-center justify-center rounded-lg border transition-all active:scale-95" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Bitácora de cambios">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </button>
+                    <div id="changelog-panel" class="hidden absolute right-0 mt-2 w-56 sm:w-64 border rounded-xl shadow-2xl z-[101] overflow-hidden" style="background: var(--surface-alt); border-color: var(--border); max-width: calc(100vw - 2rem);">
+                        <div class="px-3 py-2 border-b flex items-center justify-between" style="border-color: var(--border);">
+                            <span class="text-[9px] font-bold uppercase tracking-wider" style="color: var(--text-dim);">Bitácora</span>
+                            <span class="text-[8px] font-medium uppercase" style="color: var(--text-muted);">últimos 10</span>
+                        </div>
+                        <div id="changelog-list" class="max-h-64 overflow-y-auto p-2 flex flex-col gap-1"></div>
+                    </div>
+                </div>
+
             <div class="ml-auto flex gap-1">
                 <button onclick="toggleSort()" id="btn-sort"
                     class="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-[10px] font-bold uppercase rounded-lg border transition-all active:scale-95" style="background: rgba(196,161,68,0.08); color: var(--accent); border-color: rgba(196,161,68,0.2);" title="Cambiar Orden">
