@@ -79,19 +79,13 @@ const App = (() => {
     function buildCard(sticker, qty, isMissing, sectionId) {
         const fullId = fid(sectionId, sticker.id);
         const badgeText = qty > 1 ? `+${qty - 1}` : '';
-        const rotateOpen = sticker.type === 'team' ? '<div style="transform:rotate(-90deg);width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;">' : '';
-        const rotateClose = sticker.type === 'team' ? '</div>' : '';
-        const contentMb = sticker.type !== 'team' ? 'mb-8' : '';
-
         return `
                     ${badgeText ? `<div class="qty-badge" id="qty-${fullId}">${badgeText}</div>` : ''}
                     ${buildTypeBadge(sticker, isMissing, sectionId)}
-                    ${rotateOpen}
-                    <div class="flex flex-col items-center justify-center ${contentMb} px-1">
+                    <div class="flex flex-col items-center justify-center mb-8 px-1">
                         <div class="sticker-id text-[11px] sm:text-sm font-black leading-none tracking-tight">${sectionId}-${sticker.id}</div>
                         <div class="sticker-desc text-[9px] sm:text-[10px] leading-[1.1] text-center mt-1 w-full opacity-100 overflow-hidden line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${sticker.desc}</div>
                     </div>
-                    ${rotateClose}
                     <div class="absolute inset-x-px bottom-px flex items-center justify-center gap-3 p-1.5 rounded-b-md" style="background: var(--bar-bg);">
                         <button onclick="updateSticker('${fullId}', -1)" id="btn-minus-${fullId}" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors hover:bg-white/20 text-white border border-white/10 ${isMissing ? 'opacity-50 pointer-events-none' : ''}">
                             ${I.minus}
@@ -107,17 +101,15 @@ const App = (() => {
         return `
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
-                        ${groupBadge}<span class="whitespace-nowrap"><span class="text-[11px] sm:text-sm font-black" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium ml-1" style="color: var(--text-dim);">p.${section.page}</span></span><span class="text-[11px] sm:text-sm font-medium opacity-40" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate" style="color: var(--text-dim);">${section.name}</span>
+                        ${groupBadge}<span class="whitespace-nowrap"><span class="text-[11px] sm:text-sm font-black leading-none" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium ml-1 leading-none" style="color: var(--text-dim);">p.${section.page}</span></span><span class="text-[11px] sm:text-sm font-medium opacity-40 leading-none" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate leading-none" style="color: var(--text-dim);">${section.name}</span>
                     </div>
-                    <button onclick="event.stopPropagation();toggleJumpInput()" class="section-btn h-4 w-4 flex items-center justify-center rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'missing')" id="btn-sec-missing-${section.id}" class="section-filter-btn h-4 w-4 flex items-center justify-center text-[7px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'owned')" id="btn-sec-owned-${section.id}" class="section-filter-btn h-4 w-4 flex items-center justify-center text-[7px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'duplicates')" id="btn-sec-duplicates-${section.id}" class="section-filter-btn h-4 w-4 flex items-center justify-center text-[7px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes">R</button>
-                    <span class="whitespace-nowrap"><span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden text-[11px] sm:text-sm font-bold" style="color: rgba(var(--accent-rgb), 0.65);"></span></span>
-                    <div class="flex items-center gap-1.5 ml-1">
-                        <span id="dup-val-${section.id}" class="hidden dup-badge">0 rep</span>
-                    </div>
-                    <button onclick="event.stopPropagation();window.scrollTo({top:0,behavior:'smooth'})" class="h-4 w-4 flex items-center justify-center rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Ir al inicio">↑</button>
+                    <button onclick="event.stopPropagation();toggleJumpInput()" class="h-4 min-w-[22px] flex items-center justify-center px-0.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'missing')" id="btn-sec-missing-${section.id}" class="section-filter-btn h-4 min-w-[22px] flex items-center justify-center gap-0.5 px-1 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta"><span class="text-[7px] font-black uppercase leading-none">F</span><span id="btn-sec-missing-cnt-${section.id}" class="hidden text-[7px] font-bold leading-none" style="color: var(--accent);"></span></button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'owned')" id="btn-sec-owned-${section.id}" class="section-filter-btn h-4 min-w-[22px] flex items-center justify-center px-1 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo"><span class="text-[7px] font-black uppercase leading-none">T</span></button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'duplicates')" id="btn-sec-duplicates-${section.id}" class="section-filter-btn h-4 min-w-[22px] flex items-center justify-center gap-0.5 px-1 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes"><span class="text-[7px] font-black uppercase leading-none">R</span><span id="btn-sec-duplicates-cnt-${section.id}" class="hidden text-[7px] font-bold leading-none" style="color: var(--alert);"></span></button>
+                    <span class="whitespace-nowrap flex-shrink-0"><span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black leading-none" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden"></span></span>
+                    <span id="dup-val-${section.id}" class="hidden"></span>
+                    <button onclick="event.stopPropagation();window.scrollTo({top:0,behavior:'smooth'})" class="h-4 min-w-[22px] flex items-center justify-center px-0.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Ir al inicio">↑</button>
                     <span class="text-gray-400 transition-transform flex-shrink-0">${I.chevron}</span>
                 </div>`;
     }
@@ -243,15 +235,20 @@ const App = (() => {
                 percentEl.style.color = sectionPercent === 100 ? 'var(--owned)' : 'var(--accent)';
             }
 
-            // 2. Actualizar contador de faltantes por sección
+            // 2. Actualizar contador de faltantes (solo para lectura del sort header)
             const sectionMissing = sectionTotal - sectionFound;
             const missingEl = document.getElementById(`missing-val-${section.id}`);
             if (missingEl) {
+                missingEl.innerText = sectionMissing > 0 ? `(-${sectionMissing})` : '';
+            }
+            // Contador dentro del botón F
+            const missingBtnCnt = document.getElementById(`btn-sec-missing-cnt-${section.id}`);
+            if (missingBtnCnt) {
                 if (sectionMissing > 0) {
-                    missingEl.innerText = `(-${sectionMissing})`;
-                    missingEl.classList.remove('hidden');
+                    missingBtnCnt.innerText = '(' + sectionMissing + ')';
+                    missingBtnCnt.classList.remove('hidden');
                 } else {
-                    missingEl.classList.add('hidden');
+                    missingBtnCnt.classList.add('hidden');
                 }
             }
 
@@ -263,14 +260,19 @@ const App = (() => {
                 total: sectionTotal
             });
 
-            // 4. Actualizar Etiqueta de Repetidas
+            // 4. Actualizar Etiqueta de Repetidas (solo para lectura del sort header)
             const dupEl = document.getElementById(`dup-val-${section.id}`);
             if (dupEl) {
+                dupEl.innerText = sectionDuplicates > 0 ? `${sectionDuplicates} rep` : '';
+            }
+            // Contador dentro del botón R
+            const dupBtnCnt = document.getElementById(`btn-sec-duplicates-cnt-${section.id}`);
+            if (dupBtnCnt) {
                 if (sectionDuplicates > 0) {
-                    dupEl.innerText = `${sectionDuplicates} rep`;
-                    dupEl.classList.remove('hidden');
+                    dupBtnCnt.innerText = sectionDuplicates;
+                    dupBtnCnt.classList.remove('hidden');
                 } else {
-                    dupEl.classList.add('hidden');
+                    dupBtnCnt.classList.add('hidden');
                 }
             }
         });
@@ -768,18 +770,20 @@ const App = (() => {
                 pctEl.style.color = percentEl?.style.color || 'var(--accent)';
             }
             if (missingInfoEl && missingEl) {
-                if (!missingEl.classList.contains('hidden')) {
+                if (missingEl.textContent) {
                     missingInfoEl.textContent = missingEl.textContent;
                     missingInfoEl.classList.remove('hidden');
                 } else {
                     missingInfoEl.classList.add('hidden');
                 }
             }
-            if (dupEl && dupSectionEl && !dupSectionEl.classList.contains('hidden')) {
-                dupEl.textContent = dupSectionEl.textContent;
-                dupEl.classList.remove('hidden');
-            } else if (dupEl) {
-                dupEl.classList.add('hidden');
+            if (dupEl && dupSectionEl) {
+                if (dupSectionEl.textContent) {
+                    dupEl.textContent = dupSectionEl.textContent;
+                    dupEl.classList.remove('hidden');
+                } else {
+                    dupEl.classList.add('hidden');
+                }
             }
             if (infoWrap) infoWrap.classList.remove('hidden');
         } else {
