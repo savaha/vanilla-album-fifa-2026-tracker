@@ -26,7 +26,8 @@ const App = (() => {
         localStorage.removeItem('albumCollection');
     }
     let currentFilter = 'all'; // all | missing | owned | duplicates
-    let allExpanded = false;
+    const sectionFilters = new Map(); // filtro por sección (sectionId → 'missing'|'owned'|'duplicates'|undefined)
+    let allExpanded = true;
     let currentSortOrder = 'default'; // 'default' | 'alpha'
     let isBulkToggle = false; // Flag para evitar scroll masivo
     let changeLog = [];
@@ -108,12 +109,17 @@ const App = (() => {
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
                         ${groupBadge}<span class="whitespace-nowrap"><span class="text-[11px] sm:text-sm font-black" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium ml-1" style="color: var(--text-dim);">p.${section.page}</span></span><span class="text-[11px] sm:text-sm font-medium opacity-40" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate" style="color: var(--text-dim);">${section.name}</span>
                     </div>
+                    <button onclick="event.stopPropagation();toggleJumpInput()" class="section-btn h-4 w-4 flex items-center justify-center rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'missing')" id="btn-sec-missing-${section.id}" class="section-filter-btn h-4 w-4 flex items-center justify-center text-[7px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'owned')" id="btn-sec-owned-${section.id}" class="section-filter-btn h-4 w-4 flex items-center justify-center text-[7px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'duplicates')" id="btn-sec-duplicates-${section.id}" class="section-filter-btn h-4 w-4 flex items-center justify-center text-[7px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes">R</button>
                     <span class="whitespace-nowrap"><span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden text-[11px] sm:text-sm font-bold" style="color: rgba(var(--accent-rgb), 0.65);"></span></span>
                     <div class="flex items-center gap-1.5 ml-1">
                         <span id="dup-val-${section.id}" class="hidden dup-badge">0 rep</span>
                     </div>
-                </div>
-                <span class="text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0">${I.chevron}</span>`;
+                    <button onclick="event.stopPropagation();window.scrollTo({top:0,behavior:'smooth'})" class="h-4 w-4 flex items-center justify-center rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Ir al inicio">↑</button>
+                    <span class="text-gray-400 transition-transform flex-shrink-0">${I.chevron}</span>
+                </div>`;
     }
 
     function buildDashboard() {
@@ -380,20 +386,70 @@ const App = (() => {
         applyFilter();
     }
 
+    function setSectionFilter(sectionId, filterType) {
+        const current = sectionFilters.get(sectionId);
+        if (current === filterType) {
+            sectionFilters.delete(sectionId);
+        } else {
+            sectionFilters.set(sectionId, filterType);
+        }
+        // Actualizar estilos de los botones de esa sección
+        const filters = ['missing', 'owned', 'duplicates'];
+        filters.forEach(f => {
+            const btn = document.getElementById(`btn-sec-${f}-${sectionId}`);
+            if (!btn) return;
+            const active = sectionFilters.get(sectionId) === f;
+            if (active) {
+                btn.style.background = 'var(--owned-active-bg)';
+                btn.style.color = 'var(--owned)';
+                btn.style.borderColor = 'var(--owned-active-border)';
+            } else {
+                btn.style.background = 'var(--btn-bg)';
+                btn.style.color = 'var(--btn-text)';
+                btn.style.borderColor = 'var(--btn-border)';
+            }
+        });
+        // Reaplicar visibilidad solo para esta sección
+        applySectionFilter(sectionId);
+    }
+
+    function applySectionFilter(sectionId) {
+        const section = albumStructure.find(s => s.id === sectionId);
+        if (!section) return;
+        const filter = sectionFilters.get(sectionId) || currentFilter;
+        let visibleCount = 0;
+        section.stickers.forEach(sticker => {
+            const cardEl = document.getElementById(`card-${fid(section.id, sticker.id)}`);
+            if (!cardEl) return;
+            const qty = collection[fid(section.id, sticker.id)] || 0;
+            let isVisible = false;
+            if (filter === 'all') isVisible = true;
+            if (filter === 'missing' && qty === 0) isVisible = true;
+            if (filter === 'owned' && qty > 0) isVisible = true;
+            if (filter === 'duplicates' && qty > 1) isVisible = true;
+            if (isVisible) { cardEl.classList.remove('hidden-card'); visibleCount++; }
+            else { cardEl.classList.add('hidden-card'); }
+        });
+        const sectionEl = document.getElementById(`section-${sectionId}`);
+        if (sectionEl) sectionEl.style.display = visibleCount === 0 ? 'none' : 'block';
+    }
+
     function applyFilter() {
         albumStructure.forEach(section => {
+            const filter = sectionFilters.get(section.id) || currentFilter;
             let visibleCount = 0;
 
             section.stickers.forEach(sticker => {
                 const fullId = fid(section.id, sticker.id);
                 const cardEl = document.getElementById(`card-${fullId}`);
                 const qty = collection[fullId] || 0;
+                const filter = sectionFilters.get(section.id) || currentFilter;
 
                 let isVisible = false;
-                if (currentFilter === 'all') isVisible = true;
-                if (currentFilter === 'missing' && qty === 0) isVisible = true;
-                if (currentFilter === 'owned' && qty > 0) isVisible = true;
-                if (currentFilter === 'duplicates' && qty > 1) isVisible = true;
+                if (filter === 'all') isVisible = true;
+                if (filter === 'missing' && qty === 0) isVisible = true;
+                if (filter === 'owned' && qty > 0) isVisible = true;
+                if (filter === 'duplicates' && qty > 1) isVisible = true;
 
                 if (isVisible) {
                     cardEl.classList.remove('hidden-card');
@@ -435,15 +491,6 @@ const App = (() => {
         }
 
         // Liberamos el bloqueo después de que los eventos de toggle se procesen
-        setTimeout(() => { isBulkToggle = false; }, 200);
-    }
-
-    function toggleGroupSections(group) {
-        isBulkToggle = true;
-        const sections = document.querySelectorAll(`#album-container details[data-section-group="${group}"]`);
-        // Si todas están abiertas, cerramos; si no, abrimos
-        const allOpen = [...sections].every(s => s.open);
-        sections.forEach(s => { s.open = !allOpen; });
         setTimeout(() => { isBulkToggle = false; }, 200);
     }
 
@@ -543,41 +590,29 @@ const App = (() => {
             });
         }
 
-        let lastGroup = null;
-
         // En modos sin agrupación, insertamos un header sticky único
         if (currentSortOrder !== 'default') {
             container.appendChild(buildSortHeader());
         }
 
-        // 2. Iteramos sobre la estructura (ordenada o por defecto)
+        // 2. Iteramos sobre la estructura
         displayStructure.forEach((section, index) => {
-            // Insertar Cabecera de Grupo si es el orden por defecto y la sección tiene grupo
-            if (currentSortOrder === 'default' && section.group && section.group !== lastGroup) {
-                lastGroup = section.group;
-                const groupLetter = section.group;
-                const groupHeader = document.createElement('div');
-                groupHeader.dataset.groupHeader = '';
-                groupHeader.id = `group-header-${section.group}`;
-                groupHeader.className = 'mt-3 mb-0.5 sticky top-0 z-20 py-2.5 border-b flex items-center gap-3';
-                groupHeader.style.background = 'var(--bg)';
-                groupHeader.style.borderColor = 'var(--border)';
-                groupHeader.innerHTML = `
-                            <div class="h-8 w-8 rounded-lg flex items-center justify-center font-black text-sm" style="background: var(--accent); color: var(--bg);">
-                                ${groupLetter}
-                            </div>
-                            <span class="whitespace-nowrap"><span id="group-section-id-${section.group}" class="hidden text-[11px] sm:text-sm font-black" style="color: var(--text);"></span><span id="group-page-id-${section.group}" class="hidden text-[9px] font-medium ml-1" style="color: var(--text-dim);"></span></span>
-                            <button onclick="toggleJumpInput()" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
-                            <button onclick="setFilter('missing')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta">F</button>
-                            <button onclick="setFilter('owned')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo">T</button>
-                            <button onclick="setFilter('duplicates')" class="gh-filter-btn h-5 w-5 flex items-center justify-center text-[8px] font-black uppercase rounded-full border transition-all active:scale-90" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes">R</button>
-                            <span id="group-info-${section.group}" class="hidden ml-auto flex items-center gap-1.5">
-                                <span class="whitespace-nowrap"><span id="group-info-pct-${section.group}" class="text-[11px] sm:text-sm font-black" style="color: var(--accent);"></span><span id="group-info-missing-${section.group}" class="hidden text-[11px] sm:text-sm font-bold" style="color: rgba(var(--accent-rgb), 0.65);"></span></span>
-                                <span id="group-info-dup-${section.group}" class="hidden dup-badge"></span>
-                            </span>
-                            <button onclick="toggleGroupSections('${section.group}')" class="h-5 w-5 flex items-center justify-center rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Expandir/Colapsar grupo">${I.chevron}</button>
-                        `;
-                container.appendChild(groupHeader);
+            let stickyDiv = null;
+
+            // Header sticky por sección (solo en modo default)
+            if (currentSortOrder === 'default') {
+                stickyDiv = document.createElement('div');
+                stickyDiv.id = `sticky-${section.id}`;
+                stickyDiv.dataset.stickyHeader = '';
+                stickyDiv.className = 'sticky top-0 z-20 py-2 border-b cursor-pointer select-none';
+                stickyDiv.style.backgroundColor = '#101215';
+                stickyDiv.style.borderColor = 'var(--border)';
+                stickyDiv.innerHTML = buildSummary(section);
+                stickyDiv.addEventListener('click', () => {
+                    const det = document.getElementById(`section-${section.id}`);
+                    if (det) det.open = !det.open;
+                });
+                container.appendChild(stickyDiv);
             }
 
             const details = document.createElement('details');
@@ -585,33 +620,44 @@ const App = (() => {
             details.dataset.sectionId = section.id;
             if (section.group) details.dataset.sectionGroup = section.group;
             details.className = 'group';
-
             details.open = allExpanded;
 
-            // Auto-scroll al abrir una sección (solo si es activado por el usuario, no en el primer render)
-            let isInitialRender = true;
-            details.addEventListener('toggle', (e) => {
-                if (details.open && !isInitialRender && !isBulkToggle) {
-                    setTimeout(() => {
-                        const offset = 80;
-                        const elementPosition = details.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - offset;
+            if (currentSortOrder === 'default') {
+                // Summary oculto (el header sticky hace de summary)
+                const summary = document.createElement('summary');
+                summary.style.display = 'none';
+                details.appendChild(summary);
 
-                        window.scrollTo({
-                            top: offsetPosition,
-                            behavior: 'smooth'
-                        });
-                    }, 50);
-                }
-            });
-            // Quitamos el flag de render inicial después del primer ciclo de ejecución
-            setTimeout(() => { isInitialRender = false; }, 100);
-
-            // Summary con porcentaje y duplicados por sección
-            const summary = document.createElement('summary');
-            summary.className = 'flex items-center justify-between gap-2 py-2 cursor-pointer list-none select-none border-b pb-2 mb-3';
-            summary.style.borderColor = 'var(--border)';
-            summary.innerHTML = buildSummary(section);
+                // Sincronizar chevron del sticky header
+                const updateChevron = () => {
+                    const chev = stickyDiv.querySelector('.transition-transform');
+                    if (chev) {
+                        if (details.open) chev.classList.add('rotate-180');
+                        else chev.classList.remove('rotate-180');
+                    }
+                };
+                let isInitialRender = true;
+                details.addEventListener('toggle', () => {
+                    updateChevron();
+                    if (details.open && !isInitialRender && !isBulkToggle) {
+                        setTimeout(() => {
+                            const offset = 60;
+                            const rect = stickyDiv.getBoundingClientRect();
+                            const top = rect.top + window.pageYOffset - offset;
+                            window.scrollTo({ top, behavior: 'smooth' });
+                        }, 50);
+                    }
+                });
+                setTimeout(() => { isInitialRender = false; }, 100);
+                updateChevron();
+            } else {
+                // Summary visible normal (modo sort)
+                const summary = document.createElement('summary');
+                summary.className = 'flex items-center justify-between gap-2 py-2 cursor-pointer list-none select-none border-b pb-2 mb-3';
+                summary.style.borderColor = 'var(--border)';
+                summary.innerHTML = buildSummary(section);
+                details.appendChild(summary);
+            }
 
             const grid = document.createElement('div');
             grid.className = 'grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-10 gap-2 mb-2';
@@ -627,12 +673,24 @@ const App = (() => {
                 grid.appendChild(card);
             });
 
-            details.appendChild(summary);
             details.appendChild(grid);
             container.appendChild(details);
         });
 
         // 3. Aplicamos filtros y estadísticas tras el renderizado
+        // Restaurar estilos de botones de filtro por sección
+        sectionFilters.forEach((filter, sectionId) => {
+            const filters = ['missing', 'owned', 'duplicates'];
+            filters.forEach(f => {
+                const btn = document.getElementById(`btn-sec-${f}-${sectionId}`);
+                if (!btn) return;
+                if (f === filter) {
+                    btn.style.background = 'var(--owned-active-bg)';
+                    btn.style.color = 'var(--owned)';
+                    btn.style.borderColor = 'var(--owned-active-border)';
+                }
+            });
+        });
         applyFilter();
         updateStats();
         observeSections();
@@ -651,82 +709,23 @@ const App = (() => {
     }
 
     function updateGroupHeaders() {
-        const stickyTop = 60;
-
-        // Modo con grupos (default)
+        // Modo default: detectar header stuck para agrandar el badge de grupo
         if (currentSortOrder === 'default') {
-            const groups = new Set();
-            document.querySelectorAll('#album-container details[data-section-group]').forEach(el => {
-                groups.add(el.dataset.sectionGroup);
-            });
-
-            groups.forEach(group => {
-                const sections = [...document.querySelectorAll(`#album-container details[data-section-group="${group}"]`)];
-                let current = null;
-                for (const sec of sections) {
-                    if (sec.style.display === 'none') continue;
-                    const summary = sec.querySelector('summary');
-                    if (!summary) continue;
-                    if (summary.getBoundingClientRect().top < stickyTop) {
-                        current = sec.dataset.sectionId;
-                    }
-                }
-
-                const infoWrap = document.getElementById(`group-info-${group}`);
-                if (!infoWrap) return;
-
-                const idEl = document.getElementById(`group-section-id-${group}`);
-                const pctEl = document.getElementById(`group-info-pct-${group}`);
-
-                if (current) {
-                    const missingEl = document.getElementById(`missing-val-${current}`);
-                    const percentEl = document.getElementById(`percent-val-${current}`);
-                    const dupEl = document.getElementById(`dup-val-${current}`);
-                    const dupGroupEl = document.getElementById(`group-info-dup-${group}`);
-                    if (idEl) {
-                        idEl.textContent = current;
-                        idEl.classList.remove('hidden');
-                    }
-                    const pageIdEl = document.getElementById(`group-page-id-${group}`);
-                    if (pageIdEl) {
-                        const sec = albumStructure.find(s => s.id === current);
-                        if (sec?.page != null) {
-                            pageIdEl.textContent = 'p.' + sec.page;
-                            pageIdEl.classList.remove('hidden');
-                        } else {
-                            pageIdEl.classList.add('hidden');
-                        }
-                    }
-                    if (pctEl) {
-                        pctEl.textContent = percentEl?.textContent || '0%';
-                        pctEl.style.color = percentEl?.style.color || 'var(--accent)';
-                    }
-                    const missingGroupEl = document.getElementById(`group-info-missing-${group}`);
-                    if (missingGroupEl && missingEl) {
-                        if (!missingEl.classList.contains('hidden')) {
-                            missingGroupEl.textContent = missingEl.textContent;
-                            missingGroupEl.classList.remove('hidden');
-                        } else {
-                            missingGroupEl.classList.add('hidden');
-                        }
-                    }
-                    if (dupGroupEl && dupEl && !dupEl.classList.contains('hidden')) {
-                        dupGroupEl.textContent = dupEl.textContent;
-                        dupGroupEl.classList.remove('hidden');
-                    } else if (dupGroupEl) {
-                        dupGroupEl.classList.add('hidden');
-                    }
-                    infoWrap.classList.remove('hidden');
+            document.querySelectorAll('[data-sticky-header]').forEach(div => {
+                const badge = div.querySelector('.group-badge');
+                if (!badge) return;
+                const rect = div.getBoundingClientRect();
+                // Solo el header realmente pegado al tope (no los que ya pasaron)
+                if (rect.top <= 0 && rect.bottom > 20) {
+                    badge.classList.add('stuck');
                 } else {
-                    if (idEl) idEl.classList.add('hidden');
-                    const pageIdEl2 = document.getElementById(`group-page-id-${group}`);
-                    if (pageIdEl2) pageIdEl2.classList.add('hidden');
-                    infoWrap.classList.add('hidden');
+                    badge.classList.remove('stuck');
                 }
             });
             return;
         }
 
+        const stickyTop = 60;
         // Modo sin grupos (alpha, percent): header único
         const sortHeader = document.getElementById('sort-header');
         if (!sortHeader) return;
@@ -1204,7 +1203,7 @@ const App = (() => {
         setFilter,
         toggleSort,
         toggleAllSections,
-        toggleGroupSections,
+        setSectionFilter,
         toggleJumpInput,
         toggleChangeLog,
         toggleMenu,
