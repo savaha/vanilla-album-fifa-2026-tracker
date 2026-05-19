@@ -101,15 +101,15 @@ const App = (() => {
         return `
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                     <div class="flex items-center gap-1 overflow-hidden min-w-0 flex-1">
-                        ${groupBadge}<span class="whitespace-nowrap"><span class="text-[11px] sm:text-sm font-black leading-none" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium ml-1 leading-none" style="color: var(--text-dim);">p.${section.page}</span></span><span class="text-[11px] sm:text-sm font-medium opacity-40 leading-none" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate leading-none" style="color: var(--text-dim);">${section.name}</span>
+                        ${groupBadge}<span class="whitespace-nowrap"><span class="section-id-text text-[11px] sm:text-sm font-black leading-none" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium ml-1 leading-none" style="color: var(--text-dim);">p.${section.page}</span></span><span class="text-[11px] sm:text-sm font-medium opacity-40 leading-none" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate leading-none" style="color: var(--text-dim);">${section.name}</span>
                     </div>
-                    <button onclick="event.stopPropagation();toggleJumpInput()" class="h-4 min-w-[22px] flex items-center justify-center px-0.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'missing')" id="btn-sec-missing-${section.id}" class="section-filter-btn h-4 min-w-[22px] flex items-center justify-center gap-0.5 px-1 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta"><span class="text-[7px] font-black uppercase leading-none">F</span><span id="btn-sec-missing-cnt-${section.id}" class="hidden text-[7px] font-bold leading-none" style="color: var(--accent);"></span></button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'owned')" id="btn-sec-owned-${section.id}" class="section-filter-btn h-4 min-w-[22px] flex items-center justify-center px-1 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo"><span class="text-[7px] font-black uppercase leading-none">T</span></button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'duplicates')" id="btn-sec-duplicates-${section.id}" class="section-filter-btn h-4 min-w-[22px] flex items-center justify-center gap-0.5 px-1 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes"><span class="text-[7px] font-black uppercase leading-none">R</span><span id="btn-sec-duplicates-cnt-${section.id}" class="hidden text-[7px] font-bold leading-none" style="color: var(--alert);"></span></button>
-                    <span class="whitespace-nowrap flex-shrink-0"><span id="percent-val-${section.id}" class="text-[11px] sm:text-sm font-black leading-none" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden"></span></span>
+                    <button onclick="event.stopPropagation();toggleJumpInput()" class="h-6 min-w-[26px] flex items-center justify-center px-0.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'missing')" id="btn-sec-missing-${section.id}" class="section-filter-btn h-6 min-w-[26px] flex items-center justify-center gap-0.5 px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta"><span class="text-[8px] font-black uppercase leading-none">F</span><span id="btn-sec-missing-cnt-${section.id}" class="hidden text-[8px] font-bold leading-none" style="color: var(--accent);"></span></button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'owned')" id="btn-sec-owned-${section.id}" class="section-filter-btn h-6 min-w-[26px] flex items-center justify-center px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo"><span class="text-[8px] font-black uppercase leading-none">T</span></button>
+                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'duplicates')" id="btn-sec-duplicates-${section.id}" class="section-filter-btn h-6 min-w-[26px] flex items-center justify-center gap-0.5 px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes"><span class="text-[8px] font-black uppercase leading-none">R</span><span id="btn-sec-duplicates-cnt-${section.id}" class="hidden text-[8px] font-bold leading-none" style="color: var(--alert);"></span></button>
+                    <span class="whitespace-nowrap flex-shrink-0"><span id="percent-val-${section.id}" class="text-[13px] sm:text-base font-black leading-none" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden"></span></span>
                     <span id="dup-val-${section.id}" class="hidden"></span>
-                    <button onclick="event.stopPropagation();window.scrollTo({top:0,behavior:'smooth'})" class="h-4 min-w-[22px] flex items-center justify-center px-0.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Ir al inicio">↑</button>
+                    <button onclick="event.stopPropagation();window.scrollTo({top:0,behavior:'smooth'})" class="h-6 min-w-[26px] flex items-center justify-center px-0.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Ir al inicio">↑</button>
                     <span class="text-gray-400 transition-transform flex-shrink-0">${I.chevron}</span>
                 </div>`;
     }
@@ -269,7 +269,7 @@ const App = (() => {
             const dupBtnCnt = document.getElementById(`btn-sec-duplicates-cnt-${section.id}`);
             if (dupBtnCnt) {
                 if (sectionDuplicates > 0) {
-                    dupBtnCnt.innerText = sectionDuplicates;
+                    dupBtnCnt.innerText = '(' + sectionDuplicates + ')';
                     dupBtnCnt.classList.remove('hidden');
                 } else {
                     dupBtnCnt.classList.add('hidden');
@@ -711,17 +711,14 @@ const App = (() => {
     }
 
     function updateGroupHeaders() {
-        // Modo default: detectar header stuck para agrandar el badge de grupo
+        // Modo default: detectar header stuck para agrandar el badge y el ID de sección
         if (currentSortOrder === 'default') {
             document.querySelectorAll('[data-sticky-header]').forEach(div => {
-                const badge = div.querySelector('.group-badge');
-                if (!badge) return;
                 const rect = div.getBoundingClientRect();
-                // Solo el header realmente pegado al tope (no los que ya pasaron)
                 if (rect.top <= 0 && rect.bottom > 20) {
-                    badge.classList.add('stuck');
+                    div.classList.add('stuck');
                 } else {
-                    badge.classList.remove('stuck');
+                    div.classList.remove('stuck');
                 }
             });
             return;
