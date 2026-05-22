@@ -25,8 +25,7 @@ const App = (() => {
         console.warn('Datos de colección corruptos, iniciando desde cero.', e);
         localStorage.removeItem('albumCollection');
     }
-    let currentFilter = 'all'; // all | missing | owned | duplicates
-    const sectionFilters = new Map(); // filtro por sección (sectionId → 'missing'|'owned'|'duplicates'|undefined)
+    let currentFilter = 'all';
     let allExpanded = true;
     let currentSortOrder = 'default'; // 'default' | 'alpha'
     let isBulkToggle = false; // Flag para evitar scroll masivo
@@ -104,9 +103,9 @@ const App = (() => {
                         ${groupBadge}<span class="whitespace-nowrap"><span class="section-id-text text-[11px] sm:text-sm font-black leading-none" style="color: var(--text);">${section.id}</span><span class="text-[9px] font-medium ml-1 leading-none" style="color: var(--text-dim);">p.${section.page}</span></span><span class="text-[11px] sm:text-sm font-medium opacity-40 leading-none" style="color: var(--text-dim);">·</span><span class="text-[11px] sm:text-sm font-medium uppercase tracking-tight truncate leading-none" style="color: var(--text-dim);">${section.name}</span>
                     </div>
                     <button onclick="event.stopPropagation();toggleJumpInput()" class="h-6 min-w-[26px] flex items-center justify-center px-0.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Buscar sección">${I.search}</button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'missing')" id="btn-sec-missing-${section.id}" class="section-filter-btn h-6 min-w-[26px] flex items-center justify-center gap-0.5 px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta"><span class="text-[8px] font-black uppercase leading-none">F</span><span id="btn-sec-missing-cnt-${section.id}" class="hidden text-[8px] font-bold leading-none" style="color: var(--accent);"></span></button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'owned')" id="btn-sec-owned-${section.id}" class="section-filter-btn h-6 min-w-[26px] flex items-center justify-center px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo"><span class="text-[8px] font-black uppercase leading-none">T</span></button>
-                    <button onclick="event.stopPropagation();setSectionFilter('${section.id}', 'duplicates')" id="btn-sec-duplicates-${section.id}" class="section-filter-btn h-6 min-w-[26px] flex items-center justify-center gap-0.5 px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes"><span class="text-[8px] font-black uppercase leading-none">R</span><span id="btn-sec-duplicates-cnt-${section.id}" class="hidden text-[8px] font-bold leading-none" style="color: var(--alert);"></span></button>
+                    <button onclick="event.stopPropagation();setFilter('missing')" id="btn-sec-missing-${section.id}" class="global-filter-btn h-6 min-w-[26px] flex items-center justify-center gap-0.5 px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="missing" title="Falta"><span class="text-[8px] font-black uppercase leading-none">F</span><span id="btn-sec-missing-cnt-${section.id}" class="hidden text-[8px] font-bold leading-none" style="color: var(--accent);"></span></button>
+                    <button onclick="event.stopPropagation();setFilter('owned')" id="btn-sec-owned-${section.id}" class="global-filter-btn h-6 min-w-[26px] flex items-center justify-center px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="owned" title="Tengo"><span class="text-[8px] font-black uppercase leading-none">T</span></button>
+                    <button onclick="event.stopPropagation();setFilter('duplicates')" id="btn-sec-duplicates-${section.id}" class="global-filter-btn h-6 min-w-[26px] flex items-center justify-center gap-0.5 px-1.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" data-filter="duplicates" title="Repes"><span class="text-[8px] font-black uppercase leading-none">R</span><span id="btn-sec-duplicates-cnt-${section.id}" class="hidden text-[8px] font-bold leading-none" style="color: var(--alert);"></span></button>
                     <span class="whitespace-nowrap flex-shrink-0"><span id="percent-val-${section.id}" class="text-[13px] sm:text-base font-black leading-none" style="color: var(--accent);">0%</span><span id="missing-val-${section.id}" class="hidden"></span></span>
                     <span id="dup-val-${section.id}" class="hidden"></span>
                     <button onclick="event.stopPropagation();window.scrollTo({top:0,behavior:'smooth'})" class="h-6 min-w-[26px] flex items-center justify-center px-0.5 rounded-full border transition-all active:scale-90 flex-shrink-0" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);" title="Ir al inicio">↑</button>
@@ -208,7 +207,7 @@ const App = (() => {
         albumStructure.forEach(section => {
             let sectionTotal = section.stickers.length;
             let sectionFound = 0;
-            let sectionDuplicates = 0; // NUEVO: Contador de repetidas para esta sección específica
+            let sectionDuplicates = 0;
 
             globalTotal += sectionTotal;
 
@@ -371,103 +370,40 @@ const App = (() => {
             }
         });
 
-        // Actualizar botones de filtro en los headers sticky
-        document.querySelectorAll('.gh-filter-btn').forEach(btn => {
-            const f = btn.dataset.filter;
-            if (f === currentFilter) {
-                btn.style.background = 'var(--owned-active-bg)';
-                btn.style.color = 'var(--owned)';
-                btn.style.borderColor = 'var(--owned-active-border)';
-            } else {
-                btn.style.background = 'var(--btn-bg)';
-                btn.style.color = 'var(--btn-text)';
-                btn.style.borderColor = 'var(--btn-border)';
-            }
-        });
+        // Actualizar botones de filtro en los headers sticky y títulos de sección
+        syncGlobalFilterButtons();
 
         applyFilter();
     }
 
-    function setSectionFilter(sectionId, filterType) {
-        const current = sectionFilters.get(sectionId);
-        if (current === filterType) {
-            sectionFilters.delete(sectionId);
-        } else {
-            sectionFilters.set(sectionId, filterType);
-        }
-        // Actualizar estilos de los botones de esa sección
-        const filters = ['missing', 'owned', 'duplicates'];
-        filters.forEach(f => {
-            const btn = document.getElementById(`btn-sec-${f}-${sectionId}`);
-            if (!btn) return;
-            const active = sectionFilters.get(sectionId) === f;
-            if (active) {
-                btn.style.background = 'var(--owned-active-bg)';
-                btn.style.color = 'var(--owned)';
-                btn.style.borderColor = 'var(--owned-active-border)';
-            } else {
-                btn.style.background = 'var(--btn-bg)';
-                btn.style.color = 'var(--btn-text)';
-                btn.style.borderColor = 'var(--btn-border)';
-            }
+    function syncGlobalFilterButtons() {
+        document.querySelectorAll('.gh-filter-btn, .global-filter-btn').forEach(btn => {
+            const active = btn.dataset.filter === currentFilter;
+            btn.style.background = active ? 'var(--owned-active-bg)' : 'var(--btn-bg)';
+            btn.style.color = active ? 'var(--owned)' : 'var(--btn-text)';
+            btn.style.borderColor = active ? 'var(--owned-active-border)' : 'var(--btn-border)';
         });
-        // Reaplicar visibilidad solo para esta sección
-        applySectionFilter(sectionId);
-    }
-
-    function applySectionFilter(sectionId) {
-        const section = albumStructure.find(s => s.id === sectionId);
-        if (!section) return;
-        const filter = sectionFilters.get(sectionId) || currentFilter;
-        let visibleCount = 0;
-        section.stickers.forEach(sticker => {
-            const cardEl = document.getElementById(`card-${fid(section.id, sticker.id)}`);
-            if (!cardEl) return;
-            const qty = collection[fid(section.id, sticker.id)] || 0;
-            let isVisible = false;
-            if (filter === 'all') isVisible = true;
-            if (filter === 'missing' && qty === 0) isVisible = true;
-            if (filter === 'owned' && qty > 0) isVisible = true;
-            if (filter === 'duplicates' && qty > 1) isVisible = true;
-            if (isVisible) { cardEl.classList.remove('hidden-card'); visibleCount++; }
-            else { cardEl.classList.add('hidden-card'); }
-        });
-        const sectionEl = document.getElementById(`section-${sectionId}`);
-        if (sectionEl) sectionEl.style.display = visibleCount === 0 ? 'none' : 'block';
     }
 
     function applyFilter() {
         albumStructure.forEach(section => {
-            const filter = sectionFilters.get(section.id) || currentFilter;
-            let visibleCount = 0;
-
             section.stickers.forEach(sticker => {
                 const fullId = fid(section.id, sticker.id);
                 const cardEl = document.getElementById(`card-${fullId}`);
                 const qty = collection[fullId] || 0;
-                const filter = sectionFilters.get(section.id) || currentFilter;
 
                 let isVisible = false;
-                if (filter === 'all') isVisible = true;
-                if (filter === 'missing' && qty === 0) isVisible = true;
-                if (filter === 'owned' && qty > 0) isVisible = true;
-                if (filter === 'duplicates' && qty > 1) isVisible = true;
+                if (currentFilter === 'all') isVisible = true;
+                if (currentFilter === 'missing' && qty === 0) isVisible = true;
+                if (currentFilter === 'owned' && qty > 0) isVisible = true;
+                if (currentFilter === 'duplicates' && qty > 1) isVisible = true;
 
                 if (isVisible) {
                     cardEl.classList.remove('hidden-card');
-                    visibleCount++;
                 } else {
                     cardEl.classList.add('hidden-card');
                 }
             });
-
-            // Ocultar la sección entera si no hay figuras visibles con el filtro actual
-            const sectionEl = document.getElementById(`section-${section.id}`);
-            if (visibleCount === 0) {
-                sectionEl.style.display = 'none';
-            } else {
-                sectionEl.style.display = 'block';
-            }
         });
     }
 
@@ -680,19 +616,8 @@ const App = (() => {
         });
 
         // 3. Aplicamos filtros y estadísticas tras el renderizado
-        // Restaurar estilos de botones de filtro por sección
-        sectionFilters.forEach((filter, sectionId) => {
-            const filters = ['missing', 'owned', 'duplicates'];
-            filters.forEach(f => {
-                const btn = document.getElementById(`btn-sec-${f}-${sectionId}`);
-                if (!btn) return;
-                if (f === filter) {
-                    btn.style.background = 'var(--owned-active-bg)';
-                    btn.style.color = 'var(--owned)';
-                    btn.style.borderColor = 'var(--owned-active-border)';
-                }
-            });
-        });
+        // Sincronizar estilo de botones de filtro global en secciones
+        syncGlobalFilterButtons();
         applyFilter();
         updateStats();
         observeSections();
@@ -737,6 +662,8 @@ const App = (() => {
             if (!summary) continue;
             if (summary.getBoundingClientRect().top < stickyTop) {
                 current = sec.dataset.sectionId;
+            } else {
+                break;
             }
         }
 
@@ -1204,7 +1131,6 @@ const App = (() => {
         setFilter,
         toggleSort,
         toggleAllSections,
-        setSectionFilter,
         toggleJumpInput,
         toggleChangeLog,
         toggleMenu,

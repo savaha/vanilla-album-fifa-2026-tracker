@@ -292,15 +292,15 @@
             <div class="flex gap-1">
                 <button onclick="setFilter('missing')" id="btn-filter-missing"
                     class="h-9 px-2 text-[9px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);">
-                    Falta <span id="btn-missing-val" class="font-black" style="color: var(--text);"></span>
+                    <span class="hidden sm:inline">Falta</span><span class="sm:hidden">F</span> <span id="btn-missing-val" class="font-black" style="color: var(--text);"></span>
                 </button>
                 <button onclick="setFilter('owned')" id="btn-filter-owned"
                     class="h-9 px-2 text-[9px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);">
-                    Tengo <span id="btn-owned-val" class="font-black" style="color: var(--text);"></span>
+                    <span class="hidden sm:inline">Tengo</span><span class="sm:hidden">T</span> <span id="btn-owned-val" class="font-black" style="color: var(--text);"></span>
                 </button>
                 <button onclick="setFilter('duplicates')" id="btn-filter-duplicates"
                     class="h-9 px-2 text-[9px] font-bold uppercase rounded-full border transition-all active:scale-95" style="background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-border);">
-                    Repes <span id="btn-duplicates-val" class="font-black" style="color: var(--text);"></span>
+                    <span class="hidden sm:inline">Repes</span><span class="sm:hidden">R</span> <span id="btn-duplicates-val" class="font-black" style="color: var(--text);"></span>
                 </button>
             </div>
 
