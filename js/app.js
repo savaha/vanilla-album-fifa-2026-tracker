@@ -67,10 +67,10 @@ const App = (() => {
     function buildTypeBadge(sticker, isMissing, sectionId) {
         const fullId = fid(sectionId, sticker.id);
         if (sticker.type === 'emblem') {
-            return `<div id="type-badge-${fullId}" data-type="emblem" class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none ${isMissing ? 'opacity-[.06]' : 'opacity-[.16]'}" style="color: var(--emblem);"><span class="text-[18px] sm:text-[22px] font-black uppercase tracking-widest" style="transform: rotate(-30deg);">EMBLEM</span></div>`;
+            return `<div id="type-badge-${fullId}" data-type="emblem" class="absolute inset-0 flex items-start justify-center pointer-events-none overflow-hidden select-none pt-4 ${isMissing ? 'opacity-[.06]' : 'opacity-[.16]'}" style="color: var(--emblem);"><span class="text-[18px] sm:text-[22px] font-black uppercase tracking-widest" style="transform: rotate(-30deg);">EMBLEM</span></div>`;
         }
         if (sticker.type === 'team') {
-            return `<div id="type-badge-${fullId}" data-type="team" class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none ${isMissing ? 'opacity-[.06]' : 'opacity-[.18]'}" style="color: var(--team);"><span class="text-[18px] sm:text-[22px] font-black uppercase tracking-widest" style="transform: rotate(-30deg);">TEAM</span></div>`;
+            return `<div id="type-badge-${fullId}" data-type="team" class="absolute inset-0 flex items-start justify-center pointer-events-none overflow-hidden select-none pt-4 ${isMissing ? 'opacity-[.10]' : 'opacity-[.18]'}" style="color: var(--team);"><span class="text-[18px] sm:text-[22px] font-black uppercase tracking-widest" style="transform: rotate(-30deg);">TEAM</span></div>`;
         }
         return '';
     }
@@ -619,7 +619,7 @@ const App = (() => {
                 const isMissing = qty === 0;
                 const card = document.createElement('div');
                 card.id = `card-${fid(section.id, sticker.id)}`;
-                card.className = `relative aspect-square flex flex-col items-center justify-start border rounded-md select-none transition-colors duration-200 ${isMissing ? 'card-missing' : 'card-owned'}`;
+                card.className = `relative aspect-[6/7] flex flex-col items-center justify-start border rounded-md select-none transition-colors duration-200 ${isMissing ? 'card-missing' : 'card-owned'}`;
                 if (!isMissing && sticker.type === 'emblem') {
                     card.style.borderColor = 'var(--emblem)';
                     card.style.boxShadow = '0 0 6px rgba(var(--emblem-rgb), 0.15), 0 1px 2px rgba(0,0,0,0.3)';
@@ -1124,7 +1124,7 @@ const App = (() => {
         if (owned) {
             badge.style.opacity = badge.dataset.type === 'emblem' ? '.16' : '.18';
         } else {
-            badge.style.opacity = '.03';
+            badge.style.opacity = badge.dataset.type === 'emblem' ? '.06' : '.10';
         }
     }
 
