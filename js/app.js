@@ -67,21 +67,20 @@ const App = (() => {
     function buildTypeBadge(sticker, isMissing, sectionId) {
         const fullId = fid(sectionId, sticker.id);
         if (sticker.type === 'emblem') {
-            return `<div id="type-badge-${fullId}" class="type-badge emblem-badge ${isMissing ? 'badge-dim' : ''}">Emblem</div>`;
+            return `<div id="type-badge-${fullId}" data-type="emblem" class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none ${isMissing ? 'opacity-[.06]' : 'opacity-[.16]'}" style="color: var(--emblem);"><span class="text-[18px] sm:text-[22px] font-black uppercase tracking-widest" style="transform: rotate(-30deg);">EMBLEM</span></div>`;
         }
         if (sticker.type === 'team') {
-            return `<div id="type-badge-${fullId}" class="type-badge team-badge ${isMissing ? 'badge-dim' : ''}">Team</div>`;
+            return `<div id="type-badge-${fullId}" data-type="team" class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none ${isMissing ? 'opacity-[.06]' : 'opacity-[.18]'}" style="color: var(--team);"><span class="text-[18px] sm:text-[22px] font-black uppercase tracking-widest" style="transform: rotate(-30deg);">TEAM</span></div>`;
         }
         return '';
     }
 
     function buildCard(sticker, qty, isMissing, sectionId) {
         const fullId = fid(sectionId, sticker.id);
-        const badgeText = qty > 1 ? `+${qty - 1}` : '';
+        const badgeHtml = qty > 1 ? `<span id="qty-${fullId}" class="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-[10px] font-black leading-none" style="min-width: 18px; height: 18px; padding: 0 3px; background: #1a3d26; color: var(--owned); border: 1.5px solid var(--owned);">${qty - 1}</span>` : '';
         return `
-                    ${badgeText ? `<div class="qty-badge" id="qty-${fullId}">${badgeText}</div>` : ''}
                     ${buildTypeBadge(sticker, isMissing, sectionId)}
-                    <div class="flex flex-col items-center justify-center mb-8 px-1">
+                    <div class="flex flex-col items-center justify-start pt-3 mb-6 px-1">
                         <div class="sticker-id text-[11px] sm:text-sm font-black leading-none tracking-tight">${sectionId}-${sticker.id}</div>
                         <div class="sticker-desc text-[9px] sm:text-[10px] leading-[1.1] text-center mt-1 w-full opacity-100 overflow-hidden line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${sticker.desc}</div>
                     </div>
@@ -89,9 +88,12 @@ const App = (() => {
                         <button onclick="updateSticker('${fullId}', -1)" id="btn-minus-${fullId}" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors hover:bg-white/20 text-white border border-white/10 ${isMissing ? 'opacity-50 pointer-events-none' : ''}">
                             ${I.minus}
                         </button>
-                        <button onclick="updateSticker('${fullId}', 1)" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors active:scale-90" style="background: var(--owned); color: #fff;">
-                            ${I.plus}
-                        </button>
+                        <div class="relative">
+                            <button onclick="updateSticker('${fullId}', 1)" class="w-8 h-8 flex items-center justify-center rounded-md transition-colors active:scale-90" style="background: var(--owned); color: #fff;">
+                                ${I.plus}
+                            </button>
+                            ${badgeHtml}
+                        </div>
                     </div>`;
     }
 
@@ -165,26 +167,38 @@ const App = (() => {
 
         const owned = newQty > 0;
 
+        const isEmblem = sticker?.type === 'emblem';
+
         if (owned) {
             cardEl.classList.remove('card-missing');
             cardEl.classList.add('card-owned');
             btnMinus.classList.remove('opacity-50', 'pointer-events-none');
+            if (isEmblem) {
+                cardEl.style.borderColor = 'var(--emblem)';
+                cardEl.style.boxShadow = '0 0 6px rgba(var(--emblem-rgb), 0.15), 0 1px 2px rgba(0,0,0,0.3)';
+            }
         } else {
             cardEl.classList.add('card-missing');
             cardEl.classList.remove('card-owned');
             btnMinus.classList.add('opacity-50', 'pointer-events-none');
+            if (isEmblem) {
+                cardEl.style.borderColor = '';
+                cardEl.style.boxShadow = '';
+            }
         }
 
-        // Actualizar o crear badge de cantidad (+N)
+        // Actualizar el badge de repetidas en la esquina del botón +
         let qtyBadge = document.getElementById(`qty-${stickerId}`);
         if (newQty > 1) {
             if (!qtyBadge) {
-                qtyBadge = document.createElement('div');
+                qtyBadge = document.createElement('span');
                 qtyBadge.id = `qty-${stickerId}`;
-                qtyBadge.className = 'qty-badge';
-                cardEl.appendChild(qtyBadge);
+                qtyBadge.className = 'absolute -top-1 -right-1 flex items-center justify-center rounded-full text-[10px] font-black leading-none';
+                qtyBadge.style.cssText = 'min-width:18px;height:18px;padding:0 3px;background:#1a3d26;color:var(--owned);border:1.5px solid var(--owned);';
+                const wrapper = cardEl.querySelector('.relative');
+                if (wrapper) wrapper.appendChild(qtyBadge);
             }
-            qtyBadge.innerText = `+${newQty - 1}`;
+            qtyBadge.innerText = newQty - 1;
         } else if (qtyBadge) {
             qtyBadge.remove();
         }
@@ -605,7 +619,11 @@ const App = (() => {
                 const isMissing = qty === 0;
                 const card = document.createElement('div');
                 card.id = `card-${fid(section.id, sticker.id)}`;
-                card.className = `relative aspect-[5/7] flex flex-col items-center justify-center border rounded-md select-none transition-colors duration-200 ${isMissing ? 'card-missing' : 'card-owned'}`;
+                card.className = `relative aspect-square flex flex-col items-center justify-start border rounded-md select-none transition-colors duration-200 ${isMissing ? 'card-missing' : 'card-owned'}`;
+                if (!isMissing && sticker.type === 'emblem') {
+                    card.style.borderColor = 'var(--emblem)';
+                    card.style.boxShadow = '0 0 6px rgba(var(--emblem-rgb), 0.15), 0 1px 2px rgba(0,0,0,0.3)';
+                }
 
                 card.innerHTML = buildCard(sticker, qty, isMissing, section.id);
                 grid.appendChild(card);
@@ -1104,9 +1122,9 @@ const App = (() => {
     // Actualizar estilo visual del badge de tipo (emblem/team) al cambiar estado
     function updateTypeBadge(badge, owned) {
         if (owned) {
-            badge.classList.remove('badge-dim');
+            badge.style.opacity = badge.dataset.type === 'emblem' ? '.16' : '.18';
         } else {
-            badge.classList.add('badge-dim');
+            badge.style.opacity = '.03';
         }
     }
 
